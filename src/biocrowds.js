@@ -39,7 +39,7 @@ class Grid {
         this.cells = []; 
         this.agents = [];
         this.markers = [];
-        this.numCells = 16;
+        this.numCells = 64;
         this.sqRtNumCells = Math.sqrt(this.numCells);
         this.cellSize = GRID_SIZE/this.sqRtNumCells; // square cells 
 
@@ -103,7 +103,7 @@ class Grid {
         for (var i = 0; i < this.agents.length; i++) {
             var mPos = this.agents[i].position;
             var gPos = this.agents[i].goal;
-            if (mPos.distanceTo(gPos) > 5) { 
+            if (mPos.distanceTo(gPos) > 10) { 
                 var cellX = this.agents[i].cell[0];
                 var cellY = this.agents[i].cell[1];
 
@@ -132,7 +132,18 @@ class Grid {
                         }
                     }
                 }
-            }
+            }  else {
+                if (this.agents[i].capturedMarkers.length > 0) {
+                    // release markers when goal is reached
+                    for (var k = 0; k < this.agents[i].capturedMarkers; k++) {
+                        this.agents[i].capturedMarkers[k].claimed = false;
+                        var material = new THREE.MeshBasicMaterial( {color: 'black'} );
+                        this.agents[i].capturedMarkers[k].geom.material = material;
+                        this.agents[i].capturedMarkers.length = 0;
+                    }
+                }
+                //console.log(this.grid.agents[i].geom.material.color.getStyle() + " agent reached its goal!");
+            } 
         }
     }
 
@@ -245,20 +256,11 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
             var agent = this.grid.agents[i];
             var remainingDistance = agent.position.distanceTo(agent.goal);
             this.grid.updateAgentCellPositions();
+            this.grid.updateAgentMarkers();
             
-            if (remainingDistance > 5) {
-                //console.log(remainingDistance);
-                this.grid.updateAgentMarkers();
+            if (remainingDistance > 10) {
                 agent.move();
                 agent.geom.position.set(agent.position.x, agent.position.y, agent.position.z);
-            } else {
-                for (var j = 0; j < agent.capturedMarkers; j++) {
-                    agent.capturedMarkers[j].claimed = false;
-                    var material = new THREE.MeshBasicMaterial( {color: 'black'} );
-                    this.capturedMarkers[j].geom.material = material;
-                    agent.capturedMarkers.length = 0;
-                }
-                //console.log(this.grid.agents[i].geom.material.color.getStyle() + " agent reached its goal!");
             }
         }
     }

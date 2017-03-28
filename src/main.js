@@ -4,7 +4,7 @@ import Framework from './framework'
 import BioCrowdsSystem from './biocrowds.js'
 
 var sys;
-var numMarkers = 3000;
+var numMarkers = 4500;
 var numAgents = 30;
 
 // called after the scene loads
