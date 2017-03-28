@@ -31,6 +31,13 @@ class Grid {
         this.numCells = 16;
         this.sqRtNumCells = Math.sqrt(this.numCells);
         this.cellSize = GRID_SIZE/this.sqRtNumCells; // square cells 
+
+        for (var i = 0; i < this.sqRtNumCells; i++) {
+            this.cells.push([]);
+            for (var j = 0; j < this.sqRtNumCells; j++) {
+                this.cells[i].push([]);
+            }
+        }
     }
 
     assignMarkersToCells() {
@@ -38,33 +45,10 @@ class Grid {
 
         for (var i = 0; i < numMarkers; i++) {
             var mPos = this.markers[i].position;
-            for (var j = 0; j < this.sqRtNumCells; j++) {
-                var cellMinX = -HALF_GRID_SIZE + j * cellSize; 
-                var cellMaxX = cellMinX + cellSize; 
-                for (var k = 0; k < sqRtNumCells; k++) {
-                    var cellMinY = -HALF_GRID_SIZE + k * cellSize;
-                    var cellMaxY = cellMinY + cellSize;
-                    if (mPos.x > cellMinX && mPos.x <= cellMaxX) {
-                        if (mPos.y > cellMinY && mPos.y <= cellMaxY) {
-                            this.cells[j][k] = []; 
-                            this.cells[j][k].push(this.markers[i]);
-                            this.markers[i].cell.push(j);
-                            this.markers[i].cell.push(k);   
-                        }
-                    } 
-                }
-            }
-        }        
-    }
 
-    updateAgentPostiions() {
-        console.log(this.agents.length);
-        for (var i = 0; i < this.agents.length; i++) {
-            var mPos = this.agents[i].position;
-            
             var offsetX = (this.sqRtNumCells)/2;
             var offsetY = offsetX - 1; 
-            console.log(this.cellSize);
+
             var cellX = offsetX + Math.floor(mPos.x/this.cellSize); 
             var cellY = Math.floor(mPos.z/this.cellSize);
             if (cellY < 0) {
@@ -73,8 +57,64 @@ class Grid {
                 cellY = offsetY - cellY;
             }
             
-            console.log(mPos.x + ", " + mPos.z + " is in cell " + cellX + ", " + cellY);
+            this.markers[i].cell.push(cellX);
+            this.markers[i].cell.push(cellY);
+            this.cells[cellX][cellY].push(this.markers[i]);
+        }        
+    }
 
+    updateAgentPositions() {
+        for (var i = 0; i < this.agents.length; i++) {
+            var mPos = this.agents[i].position;
+            
+            var offsetX = (this.sqRtNumCells)/2;
+            var offsetY = offsetX - 1; 
+            var cellX = offsetX + Math.floor(mPos.x/this.cellSize); 
+            var cellY = Math.floor(mPos.z/this.cellSize);
+            if (cellY < 0) {
+                cellY = offsetY + Math.abs(cellY);  
+            } else {
+                cellY = offsetY - cellY;
+            }
+            
+            //console.log(mPos.x + ", " + mPos.z + " is in cell " + cellX + ", " + cellY);
+            this.agents[i].cell.length = 0;
+            this.agents[i].cell.push(cellX);
+            this.agents[i].cell.push(cellY);
+        }
+    }
+
+    updateAgentMarkers() {
+        for (var i = 0; i < this.agents.length; i++) {
+            var mPos = this.agents[i].position;
+            var cellX = this.agents[i].cell[0];
+            var cellY = this.agents[i].cell[1];
+
+
+            var minX = cellX-1 < 0 ? 0 : cellX-1;
+            var minY = cellY-1 < 0 ? 0 : cellY-1;
+            var maxX = cellX+1 > this.sqRtNumCells-1 ? 0 : cellX+1;
+            var maxY = cellY+1 > this.sqRtNumCells-1 ? 0 : cellY+1;
+
+            var markersInCell = this.cells[cellX][cellY];
+            var markersInCell1 = this.cells[minX][cellY];
+            var markersInCell2 = this.cells[maxX][cellY];
+            var markersInCell3 = this.cells[cellX][minY];
+            var markersInCell4 = this.cells[cellX][maxY];
+            var markersToCheck = markersInCell.concat(markersInCell1.concat(markersInCell2.concat(markersInCell3.concat(markersInCell4))));
+            
+            for (var j = 0; j < markersToCheck.length; j++) {
+                if (!markersToCheck[j].claimed) {
+                    var distance = markersToCheck[j].geom.position.distanceTo(this.agents[i].geom.position);
+                    if (distance <= this.agents[i].perceptionRadius) {
+                        console.log(distance); 
+                        this.agents[i].capturedMarkers.push(markersToCheck[j]);
+                        markersToCheck[j].claimed = true;
+                        var material = new THREE.MeshBasicMaterial( {color: this.agents[i].geom.material.color} );
+                        markersToCheck[j].geom.material = material;
+                    }
+                }
+            }
         }
     }
 
@@ -98,7 +138,7 @@ class Agent {
         this.velocity = 0.5; 
         this.goal = { x: getRandom(-(HALF_GRID_SIZE - 1),HALF_GRID_SIZE - 1), y: 0, z: getRandom(-(HALF_GRID_SIZE - 1),HALF_GRID_SIZE - 1)};
         this.orientation;
-        this.perceptionRadius = 4;
+        this.perceptionRadius = 25;
         this.markers = [];
 
         this.colors = ["aqua","aquamarine","azure","beige","bisque","blanchedalmond","blue","blueviolet","brown","burlywood","cadetblue","chartreuse","chocolate","coral","cornflowerblue","cornsilk","crimson","cyan","darkcyan","darkgoldenrod","darkgray","darkgrey","darkgreen","darkkhaki","darkmagenta","darkolivegreen","darkorange","darkorchid","darkred","darksalmon","darkseagreen","darkslateblue","darkslategray","darkslategrey","darkturquoise","darkviolet","deeppink","deepskyblue","dimgray","dimgrey","dodgerblue","firebrick","floralwhite","forestgreen","fuchsia","gainsboro","ghostwhite","gold","goldenrod","gray","grey","green","greenyellow","honeydew","hotpink","indianred","indigo","ivory","khaki","lavender","lavenderblush","lawngreen","lemonchiffon","lightblue","lightcoral","lightcyan","lightgoldenrodyellow","lightgray","lightgrey","lightgreen","lightpink","lightsalmon","lightseagreen","lightskyblue","lightslategray","lightslategrey","lightsteelblue","lightyellow","lime","limegreen","linen","magenta","maroon","mediumaquamarine","mediumblue","mediumorchid","mediumpurple","mediumseagreen","mediumslateblue","mediumspringgreen","mediumturquoise","mediumvioletred","midnightblue","mintcream","mistyrose","moccasin","navajowhite","navy","oldlace","olive","olivedrab","orange","orangered","orchid","palegoldenrod","palegreen","paleturquoise","palevioletred","papayawhip","peachpuff","peru","pink","plum","powderblue","purple","red","rosybrown","royalblue","saddlebrown","salmon","sandybrown","seagreen","seashell","sienna","silver","skyblue","snow","springgreen","steelblue","tan","teal","thistle","tomato","turquoise","violet","yellow"];
@@ -108,6 +148,9 @@ class Agent {
         var material = new THREE.MeshBasicMaterial({ color: this.colors[random]});
         var cylinder = new THREE.Mesh( geometry, material );
         this.geom = cylinder;
+
+        this.cell = [];
+        this.capturedMarkers = [];
     }
 
     move() {
@@ -157,8 +200,9 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
             this.grid.markers.push(m);
         }
 
-        //this.grid.assignMarkersToCells();
-        this.grid.updateAgentPostiions();
+        this.grid.assignMarkersToCells();
+        this.grid.updateAgentPositions();
+        this.grid.updateAgentMarkers();
     }
 
     this.step = function() {

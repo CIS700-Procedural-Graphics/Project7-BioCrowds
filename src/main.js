@@ -24,7 +24,7 @@ function onLoad(framework) {
   camera.position.set(1, 1, 2);
   camera.lookAt(new THREE.Vector3(0,0,0));
 
-  var numMarkers = 200;
+  var numMarkers = 800;
   var numAgents = 30;
 
   var sys = new BioCrowdsSystem(scene);
