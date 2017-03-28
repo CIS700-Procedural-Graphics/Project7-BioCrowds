@@ -231,27 +231,33 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
         this.grid.markers.length = 0;
         scene.add(this.grid.geom);
 
-        var line1_x = -150;
-        var line1_y = -200;
+        var line1_x = -175;
+        var line1_y = -175;
 
-        var line2_x = 150;
-        var line2_y = -200; 
+        var line2_x = 175;
+        var line2_y = -175; 
 
+        var ctr = 0; 
         for (var i = 0; i < numAgents; i++) {
             var a = new Agent();
-            scene.add(a.geom);
-            a.geom.position.set(a.position.x, a.position.y, a.position.z);
-
             if (startConfig == 'opposingLines') {
                 if (i < numAgents/2) {
                     a.goal.x = line1_x;
-                    a.goal.z = line1_y + i * 10;  
+                    a.goal.z = line1_y + i * 25;
+                    a.position.x = line2_x; 
+                    a.position.z = getRandom(-175, 175);  
                 } else {
                     a.goal.x = line2_x;
-                    a.goal.z = line2_y + i * 10;
+                    a.goal.z = line2_y + ctr * 25;
+                    a.position.x = line1_x; 
+                    a.position.z = getRandom(-175, 175); 
+                    ctr++;
                 }
             } 
             
+            scene.add(a.geom);
+            a.geom.position.set(a.position.x, a.position.y, a.position.z);
+
             scene.add(a.goalGeom);
             a.goalGeom.position.set(a.goal.x, a.goal.y, a.goal.z);
 

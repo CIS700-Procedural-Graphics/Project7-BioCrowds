@@ -7,7 +7,7 @@ var sys;
 var initializingVariables = {
     numMarkers: 4500,
     numAgents: 30,
-    startConfig: 'random',
+    startConfig: 'opposingLines',
     pause: true
 };
 
