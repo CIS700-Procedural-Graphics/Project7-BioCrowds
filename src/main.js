@@ -4,6 +4,9 @@ import Framework from './framework'
 import BioCrowdsSystem from './biocrowds.js'
 
 var sys;
+var numMarkers = 2000;
+var numAgents = 30;
+
 // called after the scene loads
 function onLoad(framework) {
   var scene = framework.scene;
@@ -21,14 +24,8 @@ function onLoad(framework) {
   scene.background = new THREE.Color('skyblue');
 
   // set camera position
-  camera.position.set(1, 1, 2);
+  camera.position.set(250, 250, 10);
   camera.lookAt(new THREE.Vector3(0,0,0));
-
-  var numMarkers = 800;
-  var numAgents = 30;
-
-  var sys = new BioCrowdsSystem(scene);
-  sys.initialize(numAgents, numMarkers);
 
   gui.add(camera, 'fov', 0, 180).onChange(function(newVal) {
     camera.updateProjectionMatrix();
@@ -39,9 +36,10 @@ function onLoad(framework) {
 function onUpdate(framework) {
   if (sys == undefined) {
     sys = new BioCrowdsSystem(framework.scene);
-    sys.initialize(20, 50);
+    sys.initialize(numAgents, numMarkers);
+  } else {
+    sys.step();
   }
-  sys.step();
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
