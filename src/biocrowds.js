@@ -99,11 +99,11 @@ class Grid {
         }
     }
 
-    updateAgents() {
+    updateAgentMarkers() {
         for (var i = 0; i < this.agents.length; i++) {
             var mPos = this.agents[i].position;
             var gPos = this.agents[i].goal;
-            if (mPos.distanceTo(gPos) > 10) { 
+            if (mPos.distanceTo(gPos) > 5) { 
                 var cellX = this.agents[i].cell[0];
                 var cellY = this.agents[i].cell[1];
 
@@ -159,13 +159,18 @@ class Agent {
         this.perceptionRadius = 20;
         this.markers = [];
 
-        this.colors = ["aqua","aquamarine","azure","beige","bisque","blanchedalmond","blue","blueviolet","brown","burlywood","cadetblue","chartreuse","chocolate","coral","cornflowerblue","cornsilk","crimson","cyan","darkcyan","darkgoldenrod","darkgray","darkgrey","darkgreen","darkkhaki","darkmagenta","darkolivegreen","darkorange","darkorchid","darkred","darksalmon","darkseagreen","darkslateblue","darkslategray","darkslategrey","darkturquoise","darkviolet","deeppink","deepskyblue","dimgray","dimgrey","dodgerblue","firebrick","floralwhite","forestgreen","fuchsia","gainsboro","ghostwhite","gold","goldenrod","gray","grey","green","greenyellow","honeydew","hotpink","indianred","indigo","ivory","khaki","lavender","lavenderblush","lawngreen","lemonchiffon","lightblue","lightcoral","lightcyan","lightgoldenrodyellow","lightgray","lightgrey","lightgreen","lightpink","lightsalmon","lightseagreen","lightskyblue","lightslategray","lightslategrey","lightsteelblue","lightyellow","lime","limegreen","linen","magenta","maroon","mediumaquamarine","mediumblue","mediumorchid","mediumpurple","mediumseagreen","mediumslateblue","mediumspringgreen","mediumturquoise","mediumvioletred","midnightblue","mintcream","mistyrose","moccasin","navajowhite","navy","oldlace","olive","olivedrab","orange","orangered","orchid","palegoldenrod","palegreen","paleturquoise","palevioletred","papayawhip","peachpuff","peru","pink","plum","powderblue","purple","red","rosybrown","royalblue","saddlebrown","salmon","sandybrown","seagreen","seashell","sienna","silver","skyblue","snow","springgreen","steelblue","tan","teal","thistle","tomato","turquoise","violet","yellow"];
+        this.colors = ["aqua","aquamarine","azure","beige","bisque","blanchedalmond","blue","blueviolet","brown","burlywood","cadetblue","chartreuse","chocolate","coral","cornflowerblue","cornsilk","crimson","cyan","darkcyan","darkgoldenrod","darkgrey","darkgreen","darkkhaki","darkmagenta","darkolivegreen","darkorange","darkorchid","darkred","darksalmon","darkseagreen","darkslateblue","darkslategray","darkslategrey","darkturquoise","darkviolet","deeppink","deepskyblue","dimgray","dimgrey","dodgerblue","firebrick","floralwhite","forestgreen","fuchsia","gold","goldenrod","gray","grey","green","greenyellow","honeydew","hotpink","indianred","indigo","khaki","lavender","lavenderblush","lawngreen","lemonchiffon","lightblue","lightcoral","lightcyan","lightgoldenrodyellow","lightgray","lightgrey","lightgreen","lightpink","lightsalmon","lightseagreen","lightskyblue","lightslategray","lightslategrey","lightsteelblue","lightyellow","lime","limegreen","linen","magenta","maroon","mediumaquamarine","mediumblue","mediumorchid","mediumpurple","mediumseagreen","mediumslateblue","mediumspringgreen","mediumturquoise","mediumvioletred","midnightblue","mintcream","mistyrose","moccasin","navajowhite","navy","oldlace","olive","olivedrab","orange","orangered","orchid","palegoldenrod","palegreen","paleturquoise","palevioletred","papayawhip","peachpuff","peru","pink","plum","powderblue","purple","red","rosybrown","royalblue","saddlebrown","salmon","sandybrown","seagreen","seashell","sienna","silver","skyblue","snow","springgreen","steelblue","tan","teal","thistle","tomato","turquoise","violet","yellow"];
 
         var random = getRandomInt(0, 139);
         var geometry = new THREE.CylinderGeometry( 2, 2, 10, 32 );
         var material = new THREE.MeshBasicMaterial({ color: this.colors[random]});
         var cylinder = new THREE.Mesh( geometry, material );
         this.geom = cylinder;
+
+        var geometry2 = new THREE.CylinderGeometry( 5, 5, 0.25, 4 );
+        var material2 = new THREE.MeshBasicMaterial({ color: this.colors[random]});
+        var cylinder2 = new THREE.Mesh( geometry2, material2 );
+        this.goalGeom = cylinder2; 
 
         this.cell = [];
         this.capturedMarkers = [];
@@ -199,20 +204,6 @@ class Agent {
     }
 }
 
-
-// TODO: Turn the string into linked list 
-export function stringToLinkedList(input_string) {
-    // ex. assuming input_string = "F+X"
-    // you should return a linked list where the head is 
-    // at Node('F') and the tail is at Node('X')
-    var shapes = input_string.split("");
-    var ll = new LinkedList();
-    for (var i = 0; i < shapes.length; i++) {
-        ll.addNodeWithShape(shapes[i]);
-    }
-    return ll;
-}
-
 export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
     // defaults
     this.numAgents = 0;
@@ -232,6 +223,9 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
             scene.add(a.geom);
             a.geom.position.set(a.position.x, a.position.y, a.position.z);
 
+            scene.add(a.goalGeom);
+            a.goalGeom.position.set(a.goal.x, a.goal.y, a.goal.z);
+
             this.grid.agents.push(a);
         }
 
@@ -250,10 +244,11 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
         for (var i = 0; i < this.numAgents; i++) {
             var agent = this.grid.agents[i];
             var remainingDistance = agent.position.distanceTo(agent.goal);
+            this.grid.updateAgentCellPositions();
             
-            if (remainingDistance > 10) {
-                this.grid.updateAgentCellPositions();
-                this.grid.updateAgents();
+            if (remainingDistance > 5) {
+                //console.log(remainingDistance);
+                this.grid.updateAgentMarkers();
                 agent.move();
                 agent.geom.position.set(agent.position.x, agent.position.y, agent.position.z);
             } else {
@@ -261,8 +256,9 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
                     agent.capturedMarkers[j].claimed = false;
                     var material = new THREE.MeshBasicMaterial( {color: 'black'} );
                     this.capturedMarkers[j].geom.material = material;
+                    agent.capturedMarkers.length = 0;
                 }
-                console.log(this.grid.agents[i].geom.material.color.getStyle() + " agent reached its goal!");
+                //console.log(this.grid.agents[i].geom.material.color.getStyle() + " agent reached its goal!");
             }
         }
     }
