@@ -4,8 +4,12 @@ import Framework from './framework'
 import BioCrowdsSystem from './biocrowds.js'
 
 var sys;
-var numMarkers = 4500;
-var numAgents = 30;
+var initializingVariables = {
+    numMarkers: 4500,
+    numAgents: 30,
+    startConfig: 'random',
+    pause: true
+};
 
 // called after the scene loads
 function onLoad(framework) {
@@ -30,15 +34,22 @@ function onLoad(framework) {
   gui.add(camera, 'fov', 0, 180).onChange(function(newVal) {
     camera.updateProjectionMatrix();
   });
+  gui.add(initializingVariables, 'startConfig', [ 'random', 'opposingLines' ]).onChange(function(newVal) {
+    sys.reset();
+    sys.initialize(initializingVariables.numAgents, initializingVariables.numMarkers, initializingVariables.startConfig);
+  });
+  gui.add(initializingVariables, 'pause'); 
 }
 
 // called on frame updates
 function onUpdate(framework) {
   if (sys == undefined) {
     sys = new BioCrowdsSystem(framework.scene);
-    sys.initialize(numAgents, numMarkers);
+    sys.initialize(initializingVariables.numAgents, initializingVariables.numMarkers, initializingVariables.startConfig);
   } else {
-    sys.step();
+    if(!initializingVariables.pause) {
+      sys.step();
+    }
   }
 }
 

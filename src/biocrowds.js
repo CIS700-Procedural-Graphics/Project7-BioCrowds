@@ -167,12 +167,12 @@ class Agent {
         this.velocity = 0.5; 
         this.goal = new THREE.Vector3(getRandom(-(HALF_GRID_SIZE - 1),HALF_GRID_SIZE - 1), 0, getRandom(-(HALF_GRID_SIZE - 1),HALF_GRID_SIZE - 1));
         this.orientation;
-        this.perceptionRadius = 20;
+        this.perceptionRadius = 25;
         this.markers = [];
 
-        this.colors = ["aqua","aquamarine","azure","beige","bisque","blanchedalmond","blue","blueviolet","brown","burlywood","cadetblue","chartreuse","chocolate","coral","cornflowerblue","cornsilk","crimson","cyan","darkcyan","darkgoldenrod","darkgrey","darkgreen","darkkhaki","darkmagenta","darkolivegreen","darkorange","darkorchid","darkred","darksalmon","darkseagreen","darkslateblue","darkslategray","darkslategrey","darkturquoise","darkviolet","deeppink","deepskyblue","dimgray","dimgrey","dodgerblue","firebrick","floralwhite","forestgreen","fuchsia","gold","goldenrod","gray","grey","green","greenyellow","honeydew","hotpink","indianred","indigo","khaki","lavender","lavenderblush","lawngreen","lemonchiffon","lightblue","lightcoral","lightcyan","lightgoldenrodyellow","lightgray","lightgrey","lightgreen","lightpink","lightsalmon","lightseagreen","lightskyblue","lightslategray","lightslategrey","lightsteelblue","lightyellow","lime","limegreen","linen","magenta","maroon","mediumaquamarine","mediumblue","mediumorchid","mediumpurple","mediumseagreen","mediumslateblue","mediumspringgreen","mediumturquoise","mediumvioletred","midnightblue","mintcream","mistyrose","moccasin","navajowhite","navy","oldlace","olive","olivedrab","orange","orangered","orchid","palegoldenrod","palegreen","paleturquoise","palevioletred","papayawhip","peachpuff","peru","pink","plum","powderblue","purple","red","rosybrown","royalblue","saddlebrown","salmon","sandybrown","seagreen","seashell","sienna","silver","skyblue","snow","springgreen","steelblue","tan","teal","thistle","tomato","turquoise","violet","yellow"];
+        this.colors = ["aqua","aquamarine","azure","blue","blueviolet","brown","burlywood","cadetblue","chocolate","coral","cornflowerblue","crimson","cyan","deeppink","deepskyblue","dimgray","dimgrey","dodgerblue","firebrick","floralwhite","forestgreen","fuchsia","gold","green","greenyellow","honeydew","hotpink","indianred","indigo","lavender","lavenderblush","lawngreen","lemonchiffon","lime","limegreen","magenta","maroon","midnightblue","mintcream","mistyrose","moccasin","navy","olive","olivedrab","orange","orangered","orchid","peachpuff","pink","powderblue","purple","red","royalblue","salmon","seagreen","sienna","skyblue","springgreen","steelblue","teal","tomato","turquoise","violet","yellow"];
 
-        var random = getRandomInt(0, 139);
+        var random = getRandomInt(0, this.colors.length-1);
         var geometry = new THREE.CylinderGeometry( 2, 2, 10, 32 );
         var material = new THREE.MeshBasicMaterial({ color: this.colors[random]});
         var cylinder = new THREE.Mesh( geometry, material );
@@ -220,20 +220,38 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
     this.numAgents = 0;
     this.numMarkers = 0;
     this.grid = {};
+    this.goalConfig = 'random';
 
-    this.initialize = function(numAgents, numMarkers) {
+    this.initialize = function(numAgents, numMarkers, startConfig) {
         this.numAgents = numAgents;
         this.numMarkers = numMarkers;
+        this.goalConfig = startConfig;
         this.grid = new Grid();
         this.grid.agents.length = 0;
         this.grid.markers.length = 0;
         scene.add(this.grid.geom);
+
+        var line1_x = -150;
+        var line1_y = -200;
+
+        var line2_x = 150;
+        var line2_y = -200; 
 
         for (var i = 0; i < numAgents; i++) {
             var a = new Agent();
             scene.add(a.geom);
             a.geom.position.set(a.position.x, a.position.y, a.position.z);
 
+            if (startConfig == 'opposingLines') {
+                if (i < numAgents/2) {
+                    a.goal.x = line1_x;
+                    a.goal.z = line1_y + i * 10;  
+                } else {
+                    a.goal.x = line2_x;
+                    a.goal.z = line2_y + i * 10;
+                }
+            } 
+            
             scene.add(a.goalGeom);
             a.goalGeom.position.set(a.goal.x, a.goal.y, a.goal.z);
 
@@ -262,6 +280,17 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
                 agent.move();
                 agent.geom.position.set(agent.position.x, agent.position.y, agent.position.z);
             }
+        }
+    }
+
+    this.reset = function() {
+        for (var i = 0; i < this.numAgents; i++) {
+            var agent = this.grid.agents[i];
+            scene.remove(agent.geom);
+            scene.remove(agent.goalGeom);
+        }
+        for (var j = 0; j < this.numMarkers; j++) {
+            scene.remove(this.grid.markers[j].geom);
         }
     }
 }
