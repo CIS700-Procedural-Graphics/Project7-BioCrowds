@@ -1,8 +1,8 @@
 const THREE = require('three'); // older modules are imported like this. You shouldn't have to worry about this much
 import Framework from './framework'
 
-const GRID_SIZE = 500;
-const HALF_GRID_SIZE = 250;
+const GRID_SIZE = 400;
+const HALF_GRID_SIZE = 200;
 
 function getRandom(min, max) {
   return Math.random() * (max - min) + min;
@@ -28,13 +28,13 @@ class Grid {
         this.cells = []; 
         this.agents = [];
         this.markers = [];
-        this.numCells = 25;
+        this.numCells = 16;
         this.sqRtNumCells = Math.sqrt(this.numCells);
         this.cellSize = GRID_SIZE/this.sqRtNumCells; // square cells 
     }
 
     assignMarkersToCells() {
-        var numMarkers = this.markers.size;
+        var numMarkers = this.markers.length;
 
         for (var i = 0; i < numMarkers; i++) {
             var mPos = this.markers[i].position;
@@ -58,24 +58,23 @@ class Grid {
     }
 
     updateAgentPostiions() {
-        for (var i = 0; i < this.agents.size; i++) {
+        console.log(this.agents.length);
+        for (var i = 0; i < this.agents.length; i++) {
             var mPos = this.agents[i].position;
-            for (var j = 0; j < this.sqRtNumCells; j++) {
-                var cellMinX = -HALF_GRID_SIZE + j * cellSize; 
-                var cellMaxX = cellMinX + cellSize; 
-                for (var k = 0; k < sqRtNumCells; k++) {
-                    var cellMinY = -HALF_GRID_SIZE + k * cellSize;
-                    var cellMaxY = cellMinY + cellSize;
-                    if (mPos.x > cellMinX && mPos.x <= cellMaxX) {
-                        if (mPos.y > cellMinY && mPos.y <= cellMaxY) {
-                            this.cells[j][k] = []; 
-                            this.cells[j][k].push(this.agents[i]);
-                            this.agents[i].cell.push(j);
-                            this.agents[i].cell.push(k);   
-                        }
-                    } 
-                }
+            
+            var offsetX = (this.sqRtNumCells)/2;
+            var offsetY = offsetX - 1; 
+            console.log(this.cellSize);
+            var cellX = offsetX + Math.floor(mPos.x/this.cellSize); 
+            var cellY = Math.floor(mPos.z/this.cellSize);
+            if (cellY < 0) {
+                cellY = offsetY + Math.abs(cellY);  
+            } else {
+                cellY = offsetY - cellY;
             }
+            
+            console.log(mPos.x + ", " + mPos.z + " is in cell " + cellX + ", " + cellY);
+
         }
     }
 
@@ -159,6 +158,7 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
         }
 
         //this.grid.assignMarkersToCells();
+        this.grid.updateAgentPostiions();
     }
 
     this.step = function() {
