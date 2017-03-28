@@ -26,7 +26,7 @@ class Marker {
 
 class Agent {
     constructor() {
-        this.position = new THREE.Vector3(getRandom(-100,100), 0, getRandom(-100,100));
+        this.position = new THREE.Vector3(getRandom(-150,150), 10, getRandom(-150,150));
         this.velocity = 0.5; 
         this.goal = { x: getRandom(-100,100), y: 0, z: getRandom(-100,100)};
         this.orientation;
@@ -70,7 +70,7 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
         for (var i = 0; i < numAgents; i++) {
             var a = new Agent();
             scene.add(a.geom);
-            a.geom.position.set(a.position.x, a.position.y, a.position.y);
+            a.geom.position.set(a.position.x, a.position.y, a.position.z);
 
             this.agents.push(a);
             console.log(a.position);
