@@ -34,7 +34,6 @@ export default class Grid {
 
 	// convert from world space to uniform grid space
 	ws_to_tgs(ws_x, ws_z) {
-		var half_plane_size = this.plane_size / 2.0;
 		// perform translation
 		var tgs_x = ws_x + 50.0;
 		var tgs_z = ws_z + 50.0;

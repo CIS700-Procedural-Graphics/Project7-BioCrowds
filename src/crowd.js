@@ -8,7 +8,7 @@ export default class Crowd {
   	this.renderengine = renderengine;
   	this.markers = [];
   	this.agents = [];
-  	this.board = new Grid(2.0, 100.0);
+  	this.board = new Grid(10.0, 100.0);
 
   	this.create_agents();
   	this.create_markers();
@@ -57,23 +57,35 @@ export default class Crowd {
   	for (var i = 0; i < this.markers.length; i++) {
   		var marker = this.markers[i];
   		var ngs = this.board.find_nearest_grid(marker.position.x, marker.position.z);
+  		if (ngs.x === this.board.grid.length) {
+  			ngs.x -= 1;
+  		}
+  		if (ngs.z === this.board.grid.length) {
+  			ngs.z -= 1;
+  		}
+
   		var top_left = {x: ngs.x -1, z: ngs.z - 1};
   		var top = {x: ngs.x, z: ngs.z - 1};
   		var left = {x: ngs.x - 1, z: ngs.z};
   		var grid = this.board.grid;
   		var eligible_agents = [];
-  		if (grid[top_left.z][top_left.x].length !== 0) {
+  		if (top_left.z > -1 && top_left.x > -1 && grid[top_left.z][top_left.x].length !== 0) {
   			grid[top_left.z][top_left.x].forEach(function(agent) {
   				eligible_agents.push(agent);
   			});
   		}
-  		if (grid[top.z][top.x].length !== 0) {
-  			grid[top_left.z][top_left.x].forEach(function(agent) {
+  		if (top.z > -1 && top.x > -1 && grid[top.z][top.x].length !== 0) {
+  			grid[top.z][top.x].forEach(function(agent) {
   				eligible_agents.push(agent);
   			});
 		}
-  		if (grid[left.z][left.x].length !== 0) {
-  			grid[top_left.z][top_left.x].forEach(function(agent) {
+  		if (left.z > -1 && left.x > -1 && grid[left.z][left.x].length !== 0) {
+  			grid[left.z][left.x].forEach(function(agent) {
+  				eligible_agents.push(agent);
+  			});
+   		}
+  		if (ngs.z > -1 && ngs.x > -1 && grid[ngs.z][ngs.x].length !== 0) {
+  			grid[ngs.z][ngs.x].forEach(function(agent) {
   				eligible_agents.push(agent);
   			});
    		}
