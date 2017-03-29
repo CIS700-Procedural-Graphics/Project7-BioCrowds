@@ -11,7 +11,8 @@ var markers = [];
 var agents = [];
 
 var options = {
-  names: ['random', 'ring','center', 'corners4', 'rows', 'famous'],
+  agentNames: ['random', 'ring','center', 'corners4', 'rows'],
+  destNames: ['random', 'ring','center', 'corners4', 'rows', 'famous'],
   ring: function(i) {
     var rad = Math.random() * 2 * Math.PI;
     var radius = SIZE / 4;
@@ -150,12 +151,12 @@ function onLoad(framework) {
     camera.updateProjectionMatrix();
   });
 
-  gui.add(configGui, 'agent', options.names).onChange(function(newVal) {
+  gui.add(configGui, 'agent', options.agentNames).onChange(function(newVal) {
     config.agent = options[newVal];
     loadAgents();
   });
 
-  gui.add(configGui, 'dest', options.names).onChange(function(newVal) {
+  gui.add(configGui, 'dest', options.destNames).onChange(function(newVal) {
     config.dest = options[newVal];
     loadAgents();
   });
