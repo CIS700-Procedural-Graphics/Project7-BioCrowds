@@ -4,51 +4,50 @@ import Framework from './framework'
 
 var clock;
 var SIZE = 200;
+var HALF_SIZE = 100;
 var NUM_AGENTS = 200;
 var NUM_MARKERS = 12000;
 var markers = [];
 var agents = [];
 
 var options = {
-  agent: {
-    names: ['random', 'ring'],
-    ring: function(i) {
-      var rad = Math.random() * 2 * Math.PI;
-      var radius = SIZE / 4;
-      return new THREE.Vector2(radius * Math.cos(rad), radius * Math.sin(rad));
-    },
-    random: function(i) {
-      return new THREE.Vector2((Math.random() - 0.5) * SIZE, (Math.random() - 0.5) * SIZE);
-    }
+  names: ['random', 'ring','center', 'corners4', 'rows', 'famous'],
+  ring: function(i) {
+    var rad = Math.random() * 2 * Math.PI;
+    var radius = SIZE / 4;
+    return new THREE.Vector2(radius * Math.cos(rad), radius * Math.sin(rad));
   },
-  dest: {
-    names: ['center', 'corners4', 'rows'],
-    center: function(i) {
-      return new THREE.Vector2(0,0);
-    },
-    corners4: function(i) {
-      var r = Math.random();
-      var c = SIZE / 2;
-      return r < 0.25 ? new THREE.Vector2(-c, -c) :
-             r < 0.50 ? new THREE.Vector2(-c, c) :
-             r < 0.75 ? new THREE.Vector2(c, -c) :
-             new THREE.Vector2(c, c);
-    },
-    rows: function(i) {
-      return i < NUM_AGENTS / 2 ? new THREE.Vector2(SIZE / 2, (((i) / (0.5 * NUM_AGENTS)) * (0.5 * SIZE))) :
-             new THREE.Vector2(-SIZE / 2, ((i / (0.5 * NUM_AGENTS)) * (0.5 * SIZE)));
-    }
-  }
+  random: function(i) {
+    return new THREE.Vector2((Math.random() - 0.5) * SIZE, (Math.random() - 0.5) * SIZE);
+  },
+  center: function(i) {
+    return new THREE.Vector2(0,0);
+  },
+  corners4: function(i) {
+    var r = Math.random();
+    var c = SIZE / 2;
+    return r < 0.25 ? new THREE.Vector2(-c, -c) :
+           r < 0.50 ? new THREE.Vector2(-c, c) :
+           r < 0.75 ? new THREE.Vector2(c, -c) :
+           new THREE.Vector2(c, c);
+  },
+  rows: function(i) {
+    var r = (Math.random() - 0.5) * SIZE;
+    return i%2 == 0 ? new THREE.Vector2(r, HALF_SIZE) : new THREE.Vector2(r, -HALF_SIZE);
+  },
+  famous: function(i) {
+    return new THREE.Vector2((Math.random() - 0.5) * SIZE, (Math.random() - 0.5) * SIZE);
+  },
 }
 
 var config = {
-  agent: options.agent.random,
-  dest: options.dest.center
+  agent: options.random,
+  dest: options.center
 }
 
 var configGui = {
-  agent: '',
-  dest: ''
+  agent: 'random',
+  dest: 'center'
 }
 
 
@@ -109,7 +108,11 @@ function onLoad(framework) {
   for (var i = 0; i < NUM_AGENTS; i++) {
     var agent = agents[i];
     // var agentGeo = new THREE.BoxGeometry(1,2,1);
-    var agentGeo = new THREE.CylinderGeometry(1, 1, 2, 16);
+    if (i == 0) {
+      var agentGeo = new THREE.CylinderGeometry(1, 1, 30, 16);
+    } else {
+      var agentGeo = new THREE.CylinderGeometry(1, 1, 2, 16);
+    }
     var agentMat = new THREE.MeshBasicMaterial({color: agent.color, side: THREE.DoubleSide});
     var agentMesh = new THREE.Mesh(agentGeo, agentMat);
     agentMesh.name = agent.name;
@@ -120,7 +123,7 @@ function onLoad(framework) {
   // for (var i = 0; i < NUM_MARKERS; i++) {
   //   var marker = markers[i];
   //   var markerGeo = new THREE.BoxGeometry(1,1,1);
-  //   var markerMat = new THREE.MeshBasicMaterial({color: 0x000000, side: THREE.DoubleSide});
+  //   var markerMat = new THREE.MeshBasicMaterial({color: 0xff0000, side: THREE.DoubleSide});
   //   var markerMesh = new THREE.Mesh(markerGeo, markerMat);
   //   markerMesh.position.set(marker.pos.x, 0.5, marker.pos.y);
   //   markerMesh.name = marker.name;
@@ -137,7 +140,7 @@ function onLoad(framework) {
 
 
   // set camera position
-  camera.position.set(50, 50, 20);
+  camera.position.set(150, 200, 0);
   camera.lookAt(new THREE.Vector3(0,0,0));
 
 
@@ -147,13 +150,13 @@ function onLoad(framework) {
     camera.updateProjectionMatrix();
   });
 
-  gui.add(configGui, 'agent', options.agent.names).onChange(function(newVal) {
-    config.agent = options.agent[newVal];
+  gui.add(configGui, 'agent', options.names).onChange(function(newVal) {
+    config.agent = options[newVal];
     loadAgents();
   });
 
-  gui.add(configGui, 'dest', options.dest.names).onChange(function(newVal) {
-    config.dest = options.dest[newVal];
+  gui.add(configGui, 'dest', options.names).onChange(function(newVal) {
+    config.dest = options[newVal];
     loadAgents();
   });
 }
@@ -202,13 +205,22 @@ function onUpdate(framework) {
   // compute velocities
   for (var i = 0; i < agents.length; i++) {
     var agent = agents[i];
+
+    if (configGui.dest == "famous") {
+      if (i != 0) {
+        agent.dest = agents[0].pos;
+      } else if (i == 0 && agent.vel.x < 1) {
+        agent.dest = options.famous(0);
+      }
+    }
+
+
     var destVec = new THREE.Vector2(agent.dest.x - agent.pos.x, agent.dest.y - agent.pos.y);
     var cumulativeWeight = 0;
     var vel = new THREE.Vector2(0,0);
     for (var j = 0; j < agent.markers.length; j++) {
       var marker = agent.markers[j];
-      console.log(marker.claim.name + "   " + agent.name);
-      if (marker.claim.name == agent.name) {
+      if (marker.claim.name == agent.name || (configGui.dest == "famous" && i == 0)) {
         var markerVec = new THREE.Vector2(marker.pos.x - agent.pos.x, marker.pos.y - agent.pos.y);
         var similarity = (destVec.normalize().dot(markerVec.normalize()) + 1);
         var displacement = Math.sqrt(Math.pow(agent.pos.x - marker.pos.x, 2) + Math.pow(agent.pos.y - marker.pos.y, 2)) + 1;
@@ -230,6 +242,11 @@ function onUpdate(framework) {
 
     agents[i].vel.x = vel.x ? vel.x : 0;
     agents[i].vel.y = vel.y ? vel.y : 0;
+
+    // vel.x = vel.x ? vel.x : 0;
+    // vel.y = vel.y ? vel.y : 0;
+    // agents[i].vel.x += vel.x * delta;
+    // agents[i].vel.y += vel.y * delta;
 
     agents[i].vel.x = Math.max(Math.min(agents[i].vel.x, 2), -2);
     agents[i].vel.y = Math.max(Math.min(agents[i].vel.y, 2), -2);
