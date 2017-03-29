@@ -77,7 +77,7 @@
 	
 	
 	var crowd, renderengine;
-	var time = 0.0;
+	var time = 0;
 	// called after the scene loads
 	function onLoad(framework) {
 	  var scene = framework.scene;
@@ -110,9 +110,9 @@
 	
 	// called on frame updates
 	function onUpdate(framework) {
-	  time += 1.0;
-	  if (crowd) {
-	    crowd.update(time);
+	  time += 1;
+	  if (crowd && time % 5 === 0) {
+	    crowd.update();
 	  }
 	}
 	
@@ -42606,16 +42606,33 @@
 	  _createClass(Crowd, [{
 	    key: 'create_agents',
 	    value: function create_agents() {
-	      var agent_1_pos = new THREE.Vector3(-49, 1, 49);
-	      var agent_2_pos = new THREE.Vector3(49, 1, 49);
-	      var agent_1_goal = new THREE.Vector3(49, 0, -49);
-	      var agent_2_goal = new THREE.Vector3(-49, 0, -49);
+	      //  	var agent_1_pos = new THREE.Vector3(-49, 1, 49);
+	      //  	var agent_2_pos = new THREE.Vector3(49, 1, 49);
+	      //  	var agent_1_goal = new THREE.Vector3(49, 0, -49);
+	      //  	var agent_2_goal = new THREE.Vector3(-49, 0, -49);
 	      var zero = new THREE.Vector3(0, 0, 0);
 	
-	      var agent_1 = new _agent2.default(0, agent_1_pos, zero, agent_1_goal, 2.0, 0x00ff00);
-	      var agent_2 = new _agent2.default(1, agent_2_pos, zero, agent_2_goal, 2.0, 0x0000ff);
-	      this.agents.push(agent_1);
-	      this.agents.push(agent_2);
+	      //  	var agent_1 = new Agent(0, agent_1_pos, zero, agent_1_goal, 2.0, 0x00ff00);
+	      //  	var agent_2 = new Agent(1, agent_2_pos, zero, agent_2_goal, 2.0, 0x0000ff);
+	      // this.agents.push(agent_1);
+	      // this.agents.push(agent_2);
+	
+	      // top row
+	      for (var i = 0; i < 10; i++) {
+	        var pos = new THREE.Vector3(-49 + 10 * i, 1, 49);
+	        var goal = new THREE.Vector3(-49 + 10 * i, 1, -49);
+	        var color = Math.random() * 0xFFFFFF << 0;
+	        var agent = new _agent2.default(i, pos, zero, goal, 2.0, color);
+	        this.agents.push(agent);
+	      }
+	      // bot row
+	      for (var i = 0; i < 10; i++) {
+	        var pos = new THREE.Vector3(-49 + 10 * i, 1, -49);
+	        var goal = new THREE.Vector3(-49 + 10 * i, 1, 49);
+	        var color = Math.random() * 0xFFFFFF << 0;
+	        var agent = new _agent2.default(i + 10, pos, zero, goal, 2.0, color);
+	        this.agents.push(agent);
+	      }
 	    }
 	  }, {
 	    key: 'populate_board',
@@ -42643,9 +42660,9 @@
 	
 	  }, {
 	    key: 'update',
-	    value: function update(time) {
+	    value: function update() {
 	      this.update_marker_ownership();
-	      this.update_agent_velocities(time);
+	      this.update_agent_velocities();
 	      this.renderengine.update_agents(this.agents);
 	      this.renderengine.update_markers(this.markers);
 	      this.reset_ownership();
@@ -42725,10 +42742,10 @@
 	    }
 	  }, {
 	    key: 'update_agent_velocities',
-	    value: function update_agent_velocities(time) {
+	    value: function update_agent_velocities() {
 	      for (var i = 0; i < this.agents.length; i++) {
 	        var agent = this.agents[i];
-	        if (agent.position.distanceTo(agent.goal) > 2.0) {
+	        if (agent.position.distanceTo(agent.goal) > 8.0) {
 	          var old_gs = this.board.find_absolute_grid(agent.position.x, agent.position.z);
 	
 	          // computing total marker influence
@@ -42749,12 +42766,18 @@
 	            var weight = (1.0 + m.dot(G) / (m.length() * G.length())) / (1.0 + m.length());
 	            total_velocity.add(m.multiplyScalar(weight / total_weight));
 	          }
-	          if (i === 1) {}
 	          // agent.velocity = total_velocity.normalize();
-	          agent.position.add(total_velocity.multiplyScalar(time).normalize());
+	          if (total_velocity.x < 0.1 || total_velocity.z < 0.1) {
+	            total_velocity.add(new THREE.Vector3(G.x, G.y, G.z).multiplyScalar(0.1));
+	          }
+	          agent.position.add(total_velocity.multiplyScalar(0.2));
+	
 	          // agent.position.add(G.divideScalar(100.0));
 	          // check if the movement of this agent causes it to leave its current grid
 	          var agent_gs = this.board.find_absolute_grid(agent.position.x, agent.position.z);
+	          // if (i === 1) {
+	          // 	console.log(agent_gs);
+	          // }
 	          if (old_gs.x !== agent_gs.x || old_gs.z !== agent_gs.z) {
 	            this.board.grid[old_gs.z][old_gs.x].delete(agent);
 	            this.board.grid[agent_gs.z][agent_gs.x].add(agent);
