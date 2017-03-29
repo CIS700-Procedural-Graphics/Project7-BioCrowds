@@ -1,6 +1,41 @@
 # BioCrowds
 Biocrowds is a crowd simulation algorithm based on the formation of veination patterns on leaves. It prevents agents from colliding with each other on their way to their goal points using a notion of "personal space". Personal space is modelled with a space colonization algorithm. Markers (just points) are scattered throughout the simulation space, on the ground. At each simulation frame, each marker becomes "owned" by the agent closest to it (with some max distance representing an agent's perception). Agent velocity at the next frame is then computed using a sum of the displacement vectors to each of its markers. Because a marker can only be owned by one agent at a time, this technique prevents agents from colliding.
 
+
+
+## Simulation Results 
+
+### Simulation 1: 20 agents going from one direction to another
+
+![](./images/simulation1/1.png)
+![](./images/simulation1/2.png)
+![](./images/simulation1/3.png)
+![](./images/simulation1/4.png)
+
+
+### Simulation 2: 10 agents on one end, 10 agents on another, going to opposite ends
+
+![](./images/simulation2/1.png)
+![](./images/simulation2/2.png)
+![](./images/simulation2/3.png)
+![](./images/simulation2/4.png)
+
+
+### Simulation 3: 20 agents starting in groups in a circle and converging to the center 
+
+![](./images/simulation3/1.png)
+![](./images/simulation3/2.png)
+![](./images/simulation3/3.png)
+
+
+### Blooper: Follow the green marker road onto neverland!
+![](./images/bloopers.png)
+
+
+
+
+[ -------------------------- ASSIGNMENT INSTRUCTIONS --------------------------]
+
 ## Agent Representation (15 pts)
 Create an agent class to hold properties used for simulating and drawing the agent. Some properties you may want to consider include the following:
 - Position
