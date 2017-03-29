@@ -3,7 +3,7 @@ import Framework from './framework'
 
 const GRID_SIZE = 400;
 const HALF_GRID_SIZE = 200;
-const MAX_AGENT_SPEED = 1;
+const MAX_AGENT_SPEED = 2;
 
 function getRandom(min, max) {
   return Math.random() * (max - min) + min;
@@ -231,11 +231,13 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
         this.grid.markers.length = 0;
         scene.add(this.grid.geom);
 
-        var line1_x = -175;
-        var line1_y = -175;
+        var line1_x = -(HALF_GRID_SIZE - 25);
+        var line1_y = -(HALF_GRID_SIZE - 25);
 
-        var line2_x = 175;
-        var line2_y = -175; 
+        var line2_x = (HALF_GRID_SIZE - 25);
+        var line2_y = -(HALF_GRID_SIZE - 25);
+
+        var spacing = 2 * HALF_GRID_SIZE/(numAgents/2); 
 
         var ctr = 0; 
         for (var i = 0; i < numAgents; i++) {
@@ -243,12 +245,12 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
             if (startConfig == 'opposingLines') {
                 if (i < numAgents/2) {
                     a.goal.x = line1_x;
-                    a.goal.z = line1_y + i * 25;
+                    a.goal.z = line1_y + i * spacing;
                     a.position.x = line2_x; 
                     a.position.z = a.goal.z;  
                 } else {
                     a.goal.x = line2_x;
-                    a.goal.z = line2_y + ctr * 25;
+                    a.goal.z = line2_y + ctr * spacing;
                     a.position.x = line1_x; 
                     a.position.z = a.goal.z; 
                     ctr++;

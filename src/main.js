@@ -5,8 +5,8 @@ import BioCrowdsSystem from './biocrowds.js'
 
 var sys;
 var initializingVariables = {
-    numMarkers: 4500,
-    numAgents: 30,
+    numMarkers: 4000,
+    numAgents: 24,
     startConfig: 'opposingLines',
     pause: true
 };
