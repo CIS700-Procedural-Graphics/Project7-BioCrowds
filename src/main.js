@@ -9,7 +9,7 @@ import RenderEngine from './renderengine.js'
 import Framework from './framework'
 
 var crowd, renderengine;
-var time = 0.0;
+var time = 0;
 // called after the scene loads
 function onLoad(framework) {
   var scene = framework.scene;
@@ -42,9 +42,9 @@ function onLoad(framework) {
 
 // called on frame updates
 function onUpdate(framework) {
-  time += 1.0;
-  if (crowd) {
-    crowd.update(time);
+  time += 1;
+  if (crowd && time % 5 === 0) {
+    crowd.update();
   }
 }
 
