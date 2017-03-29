@@ -53,7 +53,6 @@ function onLoad(framework) {
     var marker_density = 5;
     var agent_density = 0.5;
     
-    //TODO: look at center and offset grid data
     camera.position.set(grid_width/2, grid_width, grid_width/2);
     camera.lookAt(new THREE.Vector3(grid_width/2,0,grid_width/2));
     controls.target.set(grid_width/2, 0, grid_width/2);
