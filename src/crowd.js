@@ -34,7 +34,7 @@ export default class Crowd {
   populate_board() {
   	for (var i = 0; i < this.agents.length; i++) {
   		var agent = this.agents[i];
-  		var gs = this.board.find_nearest_grid(agent.position.x, agent.position.z);
+  		var gs = this.board.find_absolute_grid(agent.position.x, agent.position.z);
   		this.board.grid[gs.z][gs.x].add(agent);
   	}
   }
@@ -133,22 +133,24 @@ export default class Crowd {
   	for (var i = 0; i < this.agents.length; i++) {
   		var agent = this.agents[i];
   		if (agent.position.distanceTo(agent.goal) > 2.0) {
-	  		var old_gs = this.board.find_nearest_grid(agent.position.x, agent.position.z);
+	  		var old_gs = this.board.find_absolute_grid(agent.position.x, agent.position.z);
 
 	  		// computing total marker influence
-	  		var G = new THREE.Vector3(agent.goal.x - agent.position.x, 0, agent.goal.z - agent.position.z);
+	  		var G = new THREE.Vector3().subVectors(agent.goal, agent.position)
 	  		var total_weight = 0.0;
 	  		var total_velocity = new THREE.Vector3(0, 0, 0);
 	  		for (var j = 0; j < agent.markers.length; j++) {
 	  			var marker = agent.markers[j];
-	  			var m = new THREE.Vector3(marker.position.x - agent.position.x, 0, marker.position.z - agent.position.z);
-	  			var weight = (1.0 + Math.cos(m.angleTo(G))) / (1.0 + m.length());
+	  			var m = new THREE.Vector3().subVectors(marker.position, agent.position);
+	  			m.y = 0.0;
+	  			var weight = (1.0 + m.dot(G) / (m.length() * G.length())) / (1.0 + m.length());
 	  			total_weight += weight;
 	  		}
 	  		for (var j = 0; j < agent.markers.length; j++) {
 	  			var marker = agent.markers[j];
-	  			var m = new THREE.Vector3(marker.position.x - agent.position.x, 0, marker.position.z - agent.position.z);
-	  			var weight = (1.0 + Math.cos(m.angleTo(G))) / (1.0 + m.length());
+	  			var m = new THREE.Vector3().subVectors(marker.position, agent.position);
+	  			m.y = 0.0;
+				var weight = (1.0 + m.dot(G) / (m.length() * G.length())) / (1.0 + m.length());
 	  			total_velocity.add(m.multiplyScalar(weight / total_weight));
 	  		}
 			if (i === 1) {
@@ -157,7 +159,7 @@ export default class Crowd {
 	  		agent.position.add(total_velocity.multiplyScalar(time).normalize());
 	  		// agent.position.add(G.divideScalar(100.0));
 	  		// check if the movement of this agent causes it to leave its current grid
-			var agent_gs = this.board.find_nearest_grid(agent.position.x, agent.position.z);
+			var agent_gs = this.board.find_absolute_grid(agent.position.x, agent.position.z);
 			if (old_gs.x !== agent_gs.x || old_gs.z !== agent_gs.z) {
   				this.board.grid[old_gs.z][old_gs.x].delete(agent);
   				this.board.grid[agent_gs.z][agent_gs.x].add(agent);
