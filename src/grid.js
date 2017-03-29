@@ -2,15 +2,15 @@ const THREE = require('three');
 
 // GRID IS ASSUMED TO BE A SQUARE
 export default class Grid {
-	constructor(agent_size, plane_size) {
+	constructor(cell_size, plane_size) {
 		this.plane_size = plane_size;
-		this.grid_cell_size = agent_size;
-		this.grid_len = plane_size / agent_size;
+		this.grid_cell_size = cell_size;
+		this.grid_len = plane_size / cell_size;
 		this.grid = [];
 		while(this.grid.push(new Array(this.grid_len)) < this.grid_len);
 		for (var i = 0; i < this.grid_len; i++) {
 			for (var j = 0; j < this.grid_len; j++) {
-				this.grid[i][j] = [];
+				this.grid[i][j] = new Set();
 			}
 		}
 	}
@@ -20,6 +20,12 @@ export default class Grid {
 		var tgs = this.ws_to_tgs(ws_x, ws_z);
 		var gs_z = Math.round(tgs.z / this.grid_cell_size);
 		var gs_x = Math.round(tgs.x / this.grid_cell_size);
+		if (gs_z === 10.0) {
+			gs_z = 9.0;
+		}
+		if (gs_x === 10.0) {
+			gs_x = 9.0;
+		}
 		return {z: gs_z, x: gs_x};
 	}
 
