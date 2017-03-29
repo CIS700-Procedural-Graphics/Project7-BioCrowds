@@ -10,6 +10,7 @@ export default class Crowd {
   	this.agents = [];
   	this.board = new Grid(10.0, 100.0);
   	this.scenario = scenario;
+  	this.debug = true;
 
   	this.create_agents();
   	this.populate_board();
@@ -21,6 +22,7 @@ export default class Crowd {
 
   reset_board() {
   	this.agents = [];
+  	this.debug = true;
   	this.board = new Grid(10.0, 100.0);
   	this.renderengine.clear_scene();
   }
@@ -48,8 +50,8 @@ export default class Crowd {
 	else {
 		for (var i = 0; i < 12; i++) {
 			// perform rotation
-			var x = Math.cos(Math.PI / 6 * i) * 25.0;
-			var z = Math.sin(Math.PI / 6 * i) * 25.0;
+			var x = Math.cos(Math.PI / 6 * i) * 30.0;
+			var z = Math.sin(Math.PI / 6 * i) * 30.0;
 			var pos = new THREE.Vector3(x, 1, z);
 			var goal = new THREE.Vector3(-x, 1, -z);
 			var color = (Math.random()*0xFFFFFF<<0);
@@ -181,18 +183,12 @@ export default class Crowd {
 				var weight = (1.0 + m.dot(G) / (m.length() * G.length())) / (1.0 + m.length());
 	  			total_velocity.add(m.multiplyScalar(weight / total_weight));
 	  		}
-	  		// agent.velocity = total_velocity.normalize();
 	  		if (total_velocity.x < 0.1 || total_velocity.z < 0.1) {
 	  			total_velocity.add(new THREE.Vector3(G.x, G.y, G.z).multiplyScalar(0.1));
 	  		}
-	  		agent.position.add(total_velocity.multiplyScalar(0.2));
-
-	  		// agent.position.add(G.divideScalar(100.0));
+	  		agent.position.add(total_velocity.multiplyScalar(0.15));
 	  		// check if the movement of this agent causes it to leave its current grid
 			var agent_gs = this.board.find_absolute_grid(agent.position.x, agent.position.z);
-	  		// if (i === 1) {
-	  		// 	console.log(agent_gs);
-	  		// }
 			if (old_gs.x !== agent_gs.x || old_gs.z !== agent_gs.z) {
   				this.board.grid[old_gs.z][old_gs.x].delete(agent);
   				this.board.grid[agent_gs.z][agent_gs.x].add(agent);

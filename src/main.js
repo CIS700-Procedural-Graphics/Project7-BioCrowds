@@ -51,6 +51,11 @@ function onLoad(framework) {
       crowd.renderengine.render_agents(crowd.agents);
       crowd.renderengine.render_markers(crowd.markers);
     });
+    gui.add(crowd, 'debug').onChange(function(val) {
+      crowd.markers.forEach(function(marker) {
+        marker.mesh.visible = val;
+      });
+    });
   });
 
   // set camera position
