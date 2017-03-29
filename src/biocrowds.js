@@ -245,12 +245,12 @@ export default function BioCrowdsSystem(scene, axiom, grammar, iterations) {
                     a.goal.x = line1_x;
                     a.goal.z = line1_y + i * 25;
                     a.position.x = line2_x; 
-                    a.position.z = -a.goal.z;  
+                    a.position.z = a.goal.z;  
                 } else {
                     a.goal.x = line2_x;
                     a.goal.z = line2_y + ctr * 25;
                     a.position.x = line1_x; 
-                    a.position.z = -a.goal.z; 
+                    a.position.z = a.goal.z; 
                     ctr++;
                 }
             } 
