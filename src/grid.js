@@ -18,14 +18,15 @@ function Marker() {
 	this.agentIndex;
 }
 
-function Grid (scene, width, height, scenario) {
-	this.AGENT_SIZE = 0.2;
-	this.AGENT_SPACE = 4;
-	this.NUM_AGENTS = 40;
-	this.MARKER_DENSITY = 50;
-	this.RADIUS = 2;
-	this.CIRCLE_RADIUS = 4;
-	this.TIMESTEP = .05;
+function Grid (scene, width, height, options) {
+	this.AGENT_SIZE = options.AGENT_SIZE;
+	this.MORE_ROW_AGENTS = 1 / options.MORE_ROW_AGENTS;
+	this.NUM_AGENTS = options.NUM_AGENTS;
+	this.MARKER_DENSITY = options.MARKER_DENSITY;
+	this.RADIUS = options.RADIUS;
+	this.CIRCLE_RADIUS = options.CIRCLE_RADIUS;
+	this.TIMESTEP = options.TIMESTEP;
+	this.SHOW_MARKERS = options.markers;
 
 	this.scene = scene;
 	this.w = width;
@@ -34,7 +35,7 @@ function Grid (scene, width, height, scenario) {
 	this.markerMesh;
 	this.agents = [];
 	this.markers = [];
-	this.scenario = scenario;
+	this.scenario = options.scenario;
 	this.table = [];
 	this.colors = [];
 
@@ -51,7 +52,7 @@ function Grid (scene, width, height, scenario) {
 		if (!(this.plane === undefined)) {
 			this.scene.remove(this.plane);
 		}
-		if (!(this.markerMesh === undefined)) {
+		if (!(this.markerMesh === undefined) && this.SHOW_MARKERS) {
 			this.scene.remove(this.markerMesh);
 		}
 		if (!(this.agents === undefined)) {
@@ -92,7 +93,7 @@ function Grid (scene, width, height, scenario) {
 
 	this.initRows = function() {
 		// Create front row
-		for (var i = -this.w / 2; i < this.w / 2; i += this.AGENT_SPACE*this.AGENT_SIZE) {
+		for (var i = -this.w / 2; i < this.w / 2; i += this.MORE_ROW_AGENTS*this.AGENT_SIZE) {
 			var agent = new Agent();
 			agent.size = this.AGENT_SIZE;
 			// Set up goal 
@@ -118,7 +119,7 @@ function Grid (scene, width, height, scenario) {
 		}
 
 		// Create back row
-		for (var i = -this.w / 2; i < this.w / 2; i += this.AGENT_SPACE*this.AGENT_SIZE) {
+		for (var i = -this.w / 2; i < this.w / 2; i += this.MORE_ROW_AGENTS*this.AGENT_SIZE) {
 			var agent = new Agent();
 			agent.size = this.AGENT_SIZE;
 			// Set up goal 
@@ -224,12 +225,15 @@ function Grid (scene, width, height, scenario) {
 		dotGeometry.colors = this.colors;
         var dotMaterial = new THREE.PointsMaterial( {size: 0.10, vertexColors: THREE.VertexColors} );
         this.markerMesh = new THREE.Points( dotGeometry, dotMaterial );   
-        this.scene.add( this.markerMesh );
+        if (this.SHOW_MARKERS) {
+        	this.scene.add( this.markerMesh );
+        }
 	}
 
 
 	this.tick = function() {
 		// Assigns markers based on the closest
+		this.resetMarkerOwnership();
 		for (var i = 0; i < this.agents.length; i++) {
 			var agent = this.agents[i];
 			var gridMarkers = this.getMarkers(agent.mesh.position);
@@ -241,17 +245,16 @@ function Grid (scene, width, height, scenario) {
 			this.updateVelocity(agent);
 			this.updatePosition(agent);
 		}
-		
 	}
 
 	this.updateVelocity = function(agent) {
 		agent.vel = new THREE.Vector3(0, 0, 0);
 		var totalContribution = 0.0;
 		var x = agent.mesh.position;
-		var g = new THREE.Vector3(agent.goal.x - x.x, agent.goal.y - x.y, agent.goal.z - x.z);
+		var g = new THREE.Vector3(x.x - agent.goal.x, x.y - agent.goal.y, x.z - agent.goal.z);
 		for (var i = 0; i < agent.markers.length; i++) {
-			var a = agent.markers[i].position;			
-			var m = new THREE.Vector3(a.x - x.x, a.y - x.y, a.z - x.z);
+			var a = agent.markers[i].position;
+			var m = new THREE.Vector3(x.x - a.x, x.y - a.y, x.z - a.z);
 			agent.markers[i].contribution = (1 + m.dot(g) / (m.length() * g.length())) / (1 + m.length());
 			//console.log(agent.markers[i].contribution);
 			totalContribution += agent.markers[i].contribution;
@@ -263,11 +266,16 @@ function Grid (scene, width, height, scenario) {
 			//console.log(agent.markers[i].contribution / totalContribution);
 			agent.vel.x += agent.markers[i].contribution / totalContribution*m.x;
 			agent.vel.y += agent.markers[i].contribution / totalContribution*m.y;
-			agent.vel.z += agent.markers[i].contribution / totalContribution*m.z; 
+			agent.vel.z += agent.markers[i].contribution / totalContribution*m.z;
+			agent.markers[i].contribution = 0;
+			//agent.markers[i].agent = undefined;
 		}
-		
-		agent.markers = [];
-		
+
+		if (agent.vel.length() > this.RADIUS) {
+			agent.vel.normalize().multiplyScalar(this.RADIUS);
+		}
+
+		agent.markers.length = 0;
 	}
 
 	this.updatePosition = function(agent) {
@@ -277,7 +285,6 @@ function Grid (scene, width, height, scenario) {
 	}
 
 	this.assignMarkers = function(agent, gridMarkers) {
-		//console.log(gridMarkers.length);
 		for (var j = 0; j < gridMarkers.length; j++) {
 			// distance to this agent
 			var x = gridMarkers[j].position.x - agent.mesh.position.x;
@@ -297,8 +304,7 @@ function Grid (scene, width, height, scenario) {
 					// Update
 					this.markerMesh.geometry.colors[gridMarkers[j].colorIndex] = 
 					agent.color;
-				}
-				else {
+				} else {
 					var x1 = gridMarkers[j].position.x - gridMarkers[j].agent.mesh.position.x;
 					var y1 = gridMarkers[j].position.y - gridMarkers[j].agent.mesh.position.y;
 					var z1 = gridMarkers[j].position.z - gridMarkers[j].agent.mesh.position.z;
@@ -306,6 +312,9 @@ function Grid (scene, width, height, scenario) {
 					closer = currDistance < closest;
 					if (closer) {
 						gridMarkers[j].agent.markers.splice(gridMarkers[j].agentIndex, 1);
+						for (var i = 0; i < gridMarkers[j].agent.markers.length; i++) {
+							gridMarkers[j].agent.markers[i].agentIndex = i;
+						}
 						// Assign new agent
 						gridMarkers[j].agent = agent;
 						agent.markers.push(gridMarkers[j]);
@@ -338,6 +347,14 @@ function Grid (scene, width, height, scenario) {
 		}
 
 		return markers;
+	}
+
+	this.resetMarkerOwnership = function() {
+		for (var i = 0; i < this.markers.length; ++i) {
+			this.markers[i].agent = undefined;
+			this.markerMesh.geometry.colors[this.markers[i].colorIndex] = 
+						new THREE.Color();
+		}
 	}
 
 }
