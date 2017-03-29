@@ -96,6 +96,31 @@
 	  var ambientLight = new THREE.AmbientLight(0x404040);
 	  scene.add(ambientLight);
 	
+	  var background_loader = new THREE.TextureLoader();
+	  var background = new THREE.TextureLoader().load('nyc.jpg');
+	  scene.background = background;
+	
+	  var audio_listener = new THREE.AudioListener();
+	  var track = new THREE.Audio(audio_listener);
+	  var audio = new THREE.AudioLoader();
+	  audio.load('move.m4a', function (buffer) {
+	    track.setBuffer(buffer);
+	    track.setLoop(true);
+	    track.setVolume(0.5);
+	    track.play();
+	    renderengine = new _renderengine2.default(scene);
+	    crowd = new _crowd2.default(renderengine, 'top-down');
+	    gui.add(crowd, 'scenario', ['top-down', 'circle']).onChange(function (val) {
+	      crowd.reset_board();
+	      crowd.scenario = val;
+	      crowd.create_agents();
+	      crowd.populate_board();
+	      crowd.renderengine.render_plane(100.0);
+	      crowd.renderengine.render_agents(crowd.agents);
+	      crowd.renderengine.render_markers(crowd.markers);
+	    });
+	  });
+	
 	  // set camera position
 	  camera.position.set(50, 50, 100);
 	  camera.lookAt(new THREE.Vector3(0, 0, 0));
@@ -103,9 +128,6 @@
 	  gui.add(camera, 'fov', 0, 180).onChange(function (newVal) {
 	    camera.updateProjectionMatrix();
 	  });
-	
-	  renderengine = new _renderengine2.default(scene);
-	  crowd = new _crowd2.default(renderengine);
 	}
 	
 	// called on frame updates
@@ -42587,13 +42609,14 @@
 	var THREE = __webpack_require__(2);
 	
 	var Crowd = function () {
-	  function Crowd(renderengine) {
+	  function Crowd(renderengine, scenario) {
 	    _classCallCheck(this, Crowd);
 	
 	    this.renderengine = renderengine;
 	    this.markers = [];
 	    this.agents = [];
 	    this.board = new _grid2.default(10.0, 100.0);
+	    this.scenario = scenario;
 	
 	    this.create_agents();
 	    this.populate_board();
@@ -42604,34 +42627,44 @@
 	  }
 	
 	  _createClass(Crowd, [{
+	    key: 'reset_board',
+	    value: function reset_board() {
+	      this.agents = [];
+	      this.board = new _grid2.default(10.0, 100.0);
+	      this.renderengine.clear_scene();
+	    }
+	  }, {
 	    key: 'create_agents',
 	    value: function create_agents() {
-	      //  	var agent_1_pos = new THREE.Vector3(-49, 1, 49);
-	      //  	var agent_2_pos = new THREE.Vector3(49, 1, 49);
-	      //  	var agent_1_goal = new THREE.Vector3(49, 0, -49);
-	      //  	var agent_2_goal = new THREE.Vector3(-49, 0, -49);
 	      var zero = new THREE.Vector3(0, 0, 0);
-	
-	      //  	var agent_1 = new Agent(0, agent_1_pos, zero, agent_1_goal, 2.0, 0x00ff00);
-	      //  	var agent_2 = new Agent(1, agent_2_pos, zero, agent_2_goal, 2.0, 0x0000ff);
-	      // this.agents.push(agent_1);
-	      // this.agents.push(agent_2);
-	
-	      // top row
-	      for (var i = 0; i < 10; i++) {
-	        var pos = new THREE.Vector3(-49 + 10 * i, 1, 49);
-	        var goal = new THREE.Vector3(-49 + 10 * i, 1, -49);
-	        var color = Math.random() * 0xFFFFFF << 0;
-	        var agent = new _agent2.default(i, pos, zero, goal, 2.0, color);
-	        this.agents.push(agent);
-	      }
-	      // bot row
-	      for (var i = 0; i < 10; i++) {
-	        var pos = new THREE.Vector3(-49 + 10 * i, 1, -49);
-	        var goal = new THREE.Vector3(-49 + 10 * i, 1, 49);
-	        var color = Math.random() * 0xFFFFFF << 0;
-	        var agent = new _agent2.default(i + 10, pos, zero, goal, 2.0, color);
-	        this.agents.push(agent);
+	      if (this.scenario === 'top-down') {
+	        // top row
+	        for (var i = 0; i < 10; i++) {
+	          var pos = new THREE.Vector3(-49 + 10 * i, 1, 49);
+	          var goal = new THREE.Vector3(-49 + 10 * i, 1, -49);
+	          var color = Math.random() * 0xFFFFFF << 0;
+	          var agent = new _agent2.default(i, pos, zero, goal, 2.0, color);
+	          this.agents.push(agent);
+	        }
+	        // bot row
+	        for (var i = 0; i < 10; i++) {
+	          var pos = new THREE.Vector3(-49 + 10 * i, 1, -49);
+	          var goal = new THREE.Vector3(-49 + 10 * i, 1, 49);
+	          var color = Math.random() * 0xFFFFFF << 0;
+	          var agent = new _agent2.default(i + 10, pos, zero, goal, 2.0, color);
+	          this.agents.push(agent);
+	        }
+	      } else {
+	        for (var i = 0; i < 12; i++) {
+	          // perform rotation
+	          var x = Math.cos(Math.PI / 6 * i) * 25.0;
+	          var z = Math.sin(Math.PI / 6 * i) * 25.0;
+	          var pos = new THREE.Vector3(x, 1, z);
+	          var goal = new THREE.Vector3(-x, 1, -z);
+	          var color = Math.random() * 0xFFFFFF << 0;
+	          var agent = new _agent2.default(i + 10, pos, zero, goal, 2.0, color);
+	          this.agents.push(agent);
+	        }
 	      }
 	    }
 	  }, {
@@ -42676,7 +42709,7 @@
 	
 	      for (var i = 0; i < this.markers.length; i++) {
 	        this.markers[i].owned = false;
-	        this.markers[i].color = 0xff0000;
+	        this.markers[i].color = 0x000000;
 	        this.markers[i].agent = null;
 	      }
 	    }
@@ -42721,7 +42754,7 @@
 	    key: 'assign_marker_to_agent',
 	    value: function assign_marker_to_agent(agents, marker) {
 	      if (agents.length === 0) {
-	        marker.color = 0xff0000;
+	        marker.color = 0x000000;
 	        marker.owned = false;
 	        marker.agent = null;
 	        return;
@@ -42799,7 +42832,7 @@
 	'use strict';
 	
 	Object.defineProperty(exports, "__esModule", {
-		value: true
+	  value: true
 	});
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -42809,65 +42842,78 @@
 	var THREE = __webpack_require__(2);
 	
 	var RenderEngine = function () {
-		function RenderEngine(scene) {
-			_classCallCheck(this, RenderEngine);
+	  function RenderEngine(scene) {
+	    _classCallCheck(this, RenderEngine);
 	
-			this.scene = scene;
-		}
+	    this.scene = scene;
+	  }
 	
-		_createClass(RenderEngine, [{
-			key: 'render_plane',
-			value: function render_plane(size) {
-				var plane_geo = new THREE.PlaneGeometry(size, size);
-				var plane_mesh = new THREE.Mesh(plane_geo, new THREE.MeshBasicMaterial({ color: 0xcccccc, side: THREE.DoubleSide }));
-				plane_mesh.rotation.x = Math.PI / 2.0;
-				plane_mesh.position.set(0.0, 0.0, 0.0);
-				this.scene.add(plane_mesh);
-			}
-		}, {
-			key: 'render_agents',
-			value: function render_agents(agents) {
-				var cylinder_geo = new THREE.CylinderGeometry(1, 1, 2, 20);
-				var agent;
-				for (var i = 0; i < agents.length; i++) {
-					agent = new THREE.Mesh(cylinder_geo, new THREE.MeshBasicMaterial({ color: agents[i].color, side: THREE.DoubleSide }));
-					agent.position.set(agents[i].position.x, agents[i].position.y, agents[i].position.z);
-					agents[i].mesh = agent;
-					this.scene.add(agent);
-				}
-			}
-		}, {
-			key: 'render_markers',
-			value: function render_markers(markers) {
-				var cube_geo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-				var marker;
-				for (var i = 0; i < markers.length; i++) {
-					marker = new THREE.Mesh(cube_geo, new THREE.MeshBasicMaterial({ color: markers[i].color, side: THREE.DoubleSide }));
-					marker.position.set(markers[i].position.x, markers[i].position.y, markers[i].position.z);
-					markers[i].mesh = marker;
-					this.scene.add(marker);
-				}
-			}
-		}, {
-			key: 'update_agents',
-			value: function update_agents(agents) {
-				for (var i = 0; i < agents.length; i++) {
-					var pos = agents[i].position;
-					var mesh = agents[i].mesh;
-					mesh.position.set(pos.x, pos.y, pos.z);
-					mesh.geometry.verticesNeedUpdate = true;
-				}
-			}
-		}, {
-			key: 'update_markers',
-			value: function update_markers(markers) {
-				markers.forEach(function (marker) {
-					marker.mesh.material.color.setHex(marker.color);
-				});
-			}
-		}]);
+	  _createClass(RenderEngine, [{
+	    key: 'clear_scene',
+	    value: function clear_scene() {
+	      var to_remove = [];
+	      this.scene.traverse(function (child) {
+	        if (child instanceof THREE.Mesh) {
+	          to_remove.push(child);
+	        }
+	      });
+	      for (var i = 0; i < to_remove.length; i++) {
+	        this.scene.remove(to_remove[i]);
+	      }
+	    }
+	  }, {
+	    key: 'render_plane',
+	    value: function render_plane(size) {
+	      var plane_geo = new THREE.PlaneGeometry(size, size);
+	      var plane_mesh = new THREE.Mesh(plane_geo, new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide }));
+	      plane_mesh.rotation.x = Math.PI / 2.0;
+	      plane_mesh.position.set(0.0, 0.0, 0.0);
+	      this.scene.add(plane_mesh);
+	    }
+	  }, {
+	    key: 'render_agents',
+	    value: function render_agents(agents) {
+	      var cylinder_geo = new THREE.CylinderGeometry(0.75, 0.75, 2, 20);
+	      var agent;
+	      for (var i = 0; i < agents.length; i++) {
+	        agent = new THREE.Mesh(cylinder_geo, new THREE.MeshBasicMaterial({ color: agents[i].color, side: THREE.DoubleSide }));
+	        agent.position.set(agents[i].position.x, agents[i].position.y, agents[i].position.z);
+	        agents[i].mesh = agent;
+	        this.scene.add(agent);
+	      }
+	    }
+	  }, {
+	    key: 'render_markers',
+	    value: function render_markers(markers) {
+	      var cube_geo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+	      var marker;
+	      for (var i = 0; i < markers.length; i++) {
+	        marker = new THREE.Mesh(cube_geo, new THREE.MeshBasicMaterial({ color: markers[i].color, side: THREE.DoubleSide }));
+	        marker.position.set(markers[i].position.x, markers[i].position.y, markers[i].position.z);
+	        markers[i].mesh = marker;
+	        this.scene.add(marker);
+	      }
+	    }
+	  }, {
+	    key: 'update_agents',
+	    value: function update_agents(agents) {
+	      for (var i = 0; i < agents.length; i++) {
+	        var pos = agents[i].position;
+	        var mesh = agents[i].mesh;
+	        mesh.position.set(pos.x, pos.y, pos.z);
+	        mesh.geometry.verticesNeedUpdate = true;
+	      }
+	    }
+	  }, {
+	    key: 'update_markers',
+	    value: function update_markers(markers) {
+	      markers.forEach(function (marker) {
+	        marker.mesh.material.color.setHex(marker.color);
+	      });
+	    }
+	  }]);
 	
-		return RenderEngine;
+	  return RenderEngine;
 	}();
 	
 	exports.default = RenderEngine;
