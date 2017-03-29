@@ -4,11 +4,12 @@ import Agent from './agent.js'
 import Marker from './marker.js'
 
 export default class Crowd {
-  constructor(renderengine) {
+  constructor(renderengine, scenario) {
   	this.renderengine = renderengine;
   	this.markers = [];
   	this.agents = [];
   	this.board = new Grid(10.0, 100.0);
+  	this.scenario = scenario;
 
   	this.create_agents();
   	this.populate_board();
@@ -18,33 +19,43 @@ export default class Crowd {
   	this.renderengine.render_markers(this.markers);
   }
 
+  reset_board() {
+  	this.agents = [];
+  	this.board = new Grid(10.0, 100.0);
+  	this.renderengine.clear_scene();
+  }
+
   create_agents() {
- //  	var agent_1_pos = new THREE.Vector3(-49, 1, 49);
- //  	var agent_2_pos = new THREE.Vector3(49, 1, 49);
- //  	var agent_1_goal = new THREE.Vector3(49, 0, -49);
- //  	var agent_2_goal = new THREE.Vector3(-49, 0, -49);
   	var zero = new THREE.Vector3(0, 0, 0);
-
- //  	var agent_1 = new Agent(0, agent_1_pos, zero, agent_1_goal, 2.0, 0x00ff00);
- //  	var agent_2 = new Agent(1, agent_2_pos, zero, agent_2_goal, 2.0, 0x0000ff);
-	// this.agents.push(agent_1);
-	// this.agents.push(agent_2);
-
-	// top row
-	for (var i = 0; i < 10; i ++) {
-		var pos = new THREE.Vector3(-49 + 10 * i, 1, 49);
-		var goal = new THREE.Vector3(-49 + 10 * i, 1, -49);
-		var color = (Math.random()*0xFFFFFF<<0);
-		var agent = new Agent(i, pos, zero, goal, 2.0, color);
-		this.agents.push(agent);
+  	if (this.scenario === 'top-down') {
+		// top row
+		for (var i = 0; i < 10; i ++) {
+			var pos = new THREE.Vector3(-49 + 10 * i, 1, 49);
+			var goal = new THREE.Vector3(-49 + 10 * i, 1, -49);
+			var color = (Math.random()*0xFFFFFF<<0);
+			var agent = new Agent(i, pos, zero, goal, 2.0, color);
+			this.agents.push(agent);
+		}
+		// bot row
+		for (var i = 0; i < 10; i ++) {
+			var pos = new THREE.Vector3(-49 + 10 * i, 1, -49);
+			var goal = new THREE.Vector3(-49 + 10 * i, 1, 49);
+			var color = (Math.random()*0xFFFFFF<<0);
+			var agent = new Agent(i+10, pos, zero, goal, 2.0, color);
+			this.agents.push(agent);
+		}
 	}
-	// bot row
-	for (var i = 0; i < 10; i ++) {
-		var pos = new THREE.Vector3(-49 + 10 * i, 1, -49);
-		var goal = new THREE.Vector3(-49 + 10 * i, 1, 49);
-		var color = (Math.random()*0xFFFFFF<<0);
-		var agent = new Agent(i+10, pos, zero, goal, 2.0, color);
-		this.agents.push(agent);
+	else {
+		for (var i = 0; i < 12; i++) {
+			// perform rotation
+			var x = Math.cos(Math.PI / 6 * i) * 25.0;
+			var z = Math.sin(Math.PI / 6 * i) * 25.0;
+			var pos = new THREE.Vector3(x, 1, z);
+			var goal = new THREE.Vector3(-x, 1, -z);
+			var color = (Math.random()*0xFFFFFF<<0);
+			var agent = new Agent(i+10, pos, zero, goal, 2.0, color);
+			this.agents.push(agent); 
+		}
 	}
   }
 
@@ -83,7 +94,7 @@ export default class Crowd {
 
   	for (var i = 0; i < this.markers.length; i++) {
   		this.markers[i].owned = false;
-  		this.markers[i].color = 0xff0000;
+  		this.markers[i].color = 0x000000;
   		this.markers[i].agent = null;
   	}
   }
@@ -126,7 +137,7 @@ export default class Crowd {
 
   assign_marker_to_agent(agents, marker) {
   	if (agents.length === 0) {
-  		marker.color = 0xff0000;
+  		marker.color = 0x000000;
   		marker.owned = false;
   		marker.agent = null;
   		return;

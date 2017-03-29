@@ -6,16 +6,28 @@ export default class RenderEngine {
 		this.scene = scene;
   	}
 
+  	clear_scene() {
+  		var to_remove = [];
+  		this.scene.traverse(function(child) {
+  			if (child instanceof THREE.Mesh) {
+  				to_remove.push(child);
+  			}
+  		});
+  		for (var i = 0; i < to_remove.length; i++) {
+  			this.scene.remove(to_remove[i]);
+  		}
+  	}
+
   	render_plane(size) {
 	  	var plane_geo = new THREE.PlaneGeometry(size, size);
-		var plane_mesh = new THREE.Mesh(plane_geo, new THREE.MeshBasicMaterial( {color: 0xcccccc, side: THREE.DoubleSide}));
+		var plane_mesh = new THREE.Mesh(plane_geo, new THREE.MeshBasicMaterial( {color: 0xFFFFFF, side: THREE.DoubleSide}));
 		plane_mesh.rotation.x = Math.PI / 2.0;
 		plane_mesh.position.set(0.0, 0.0, 0.0);
 		this.scene.add(plane_mesh);
   	}
 
   	render_agents(agents) {
-	 	var cylinder_geo = new THREE.CylinderGeometry(1, 1, 2, 20);
+	 	var cylinder_geo = new THREE.CylinderGeometry(0.75, 0.75, 2, 20);
 		var agent; 
 		for (var i = 0; i < agents.length; i++) {
 			agent = new THREE.Mesh(cylinder_geo, new THREE.MeshBasicMaterial( {color: agents[i].color, side: THREE.DoubleSide}));
