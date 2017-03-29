@@ -3,7 +3,7 @@ import framework from './framework'
 import Grid from './grid'
 // Set up GUI variables
 
-var GRIDSIZE = 20;
+var GRIDSIZE = 10;
 
 var appConfig = function() {
    this.scenario = "circle";

@@ -60,7 +60,7 @@
 	
 	// Set up GUI variables
 	
-	var GRIDSIZE = 20;
+	var GRIDSIZE = 10;
 	
 	var appConfig = function appConfig() {
 	    this.scenario = "circle";
