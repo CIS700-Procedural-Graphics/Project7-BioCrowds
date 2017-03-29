@@ -1,32 +1,19 @@
 # [HW1: Noise](https://github.com/CIS700-Procedural-Graphics/Project1-Noise)
 
-## Stauffer Notes - Project One - Noise
+## Stauffer Notes - Project Seven - Biocrowds
 
-Sorry for the inelegant code. I didn't have time to make it prettier.
-I left my comments in so that I can know what was going on when I get back to the code one day.
+It's working pretty well. They get mushed together at the beginning because they're spawned practically on top of each other. You can see some of the drop back as the vanguard advances, because of a simple 'personal space' heuristic.
 
-My code implements:
+# Options
 
-1. Two independently controlled multi-octave noise (MON) generators.
-2. Each uses the same underlying noise generator, unfortunately, although this may give some good continuity effects.
-3. Each can have its parameters controlled from the GUI:
-
-	a. N1 is for generator one, N2 is for generator two
-
-	b. Time Scale - scales down the time value to control 'speed' of animation
-
-	c. fundamental - set the fundamental frequency of sampling
-
-	d. harmScale - set the scaling factor between harmonics of the MON. Harmonic N = fundamental * harmScale ^ (N-1).
-
-	e. components - the number of harmonics in the MON.
-
-	f. persistence - scales the amplitude of each component in the MON. Values > 1 are interesting!
-
-	g. symmetry[XYZ] - controls symmetry of noise across each axis. Only looks good if 0 or 1. Intermediate values look good in static renders but I had trouble making it smooth with how I was using time to vary vertex position.
-
-4. Time is used simply to offset vertex position, and vertex position is used to generate noise. This has awkward effect of making noise look to be moving in a direction in some cases. Better would be to create true 4D noise with time as 4th dim.
-5. The default settings combine symmetry in X for a slow movig, high spatial-frequency noise, with symmetry in Y for a faster-moving, low spatial-frequency noise. I think this makes it look alive, like a tiny plankton creature, undulating with water pressure and life processes.
+1. RestartCrowd - press to start over
+2. numAgents - change the total number of agents that are spawned. For the 'Streams' scenario, the number is split evenly between three groups.
+3. Scenario
+	a. 'Streams' has three groups each at a different spawn point, each heading towards a different goal. As the number of agents gets large, I like how they create a roadblock in the middle of the obstacles and the agents in the back peel off and backtrack a bit to go around the other way.
+	b. 'Circle' is a simple circle of agents all going towards the center
+4. Use Obstacles - toggle to enable/disable a few simple obstacles. With larger numbers of agents in a row and lower 'personal space factor', you start to see some of the cheat across the edge of the obstacles.
+5. Speed - overall speed factor. Simple changes the per-step position change when the obstacle is free to move.
+6. Personal Space Factor - This is a multiplier applied to the agent's radius to create a simple buffer zone. Of the markers assigned to the agent at a given step, if the furthest one is closer than the edge of this buffer, the agent won't move. It's rough, but it keeps agents from getting close to each other as they approach more or less head-on. You can see the agents maintain good space when they're less jammed up.
 
 
 ## Getting Started
