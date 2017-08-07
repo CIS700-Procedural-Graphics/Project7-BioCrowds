@@ -6,6 +6,6 @@ export default class Marker
     {
       this.owner = undefined;
       this.position = pos;
-      this.closestDistance = -1.0;
+      this.closestDistance = 9999.0;
     }
 }
