@@ -15,9 +15,9 @@ var Timer = new THREE.Clock();
 
 var guiParameters = {
   numagents: 15,
-  searchRadius: 1.5,
+  searchRadius: 1.0,
   gridsize: 20, //technically = guiParameters.agentsize * 20, --> use that formula when making things dynamic
-  gridCellDensity: 75,
+  gridCellDensity: 20,
   goal_x: 0.01,
   goal_z: 0.01,
   pause: false
@@ -28,6 +28,7 @@ var grid = new Array(guiParameters.gridsize*guiParameters.gridsize);//each grid 
                                             //is x*gridsize_z*gridCellDensity from the start
 var agentList = [];
 var allcurrentmarkers = [];
+var globalmarkerlistcount = 0;
 
 var markerindex;
 var colors;
@@ -43,10 +44,10 @@ function changeGUI(gui, camera, scene)
   gui.add(camera, 'fov', 0, 180).name("Camera FOV").onChange(function(newVal) {
     camera.updateProjectionMatrix();
   });
-  gui.add(guiParameters, 'gridCellDensity', 10, 250).name("Marker Density").onChange(function(newVal) {
+  gui.add(guiParameters, 'gridCellDensity', 5, 100).name("Marker Density").onChange(function(newVal) {
     onreset(scene);
   });
-  gui.add(guiParameters, 'numagents', 10, 50).name("Number of Agents").step(1).onChange(function(newVal) {
+  gui.add(guiParameters, 'numagents', 2, 50).name("Number of Agents").step(1).onChange(function(newVal) {
     onreset(scene);
   });
   gui.add(guiParameters, 'pause').name("Pause").onChange(function(newVal) {});
@@ -67,7 +68,7 @@ function setupLightsandSkybox(scene, camera, renderer)
 
   //set plane
   var geometry = new THREE.PlaneGeometry( guiParameters.gridsize, guiParameters.gridsize, 1 );
-  var material = new THREE.MeshBasicMaterial( {color: 0x000, side: THREE.DoubleSide} );
+  var material = new THREE.MeshBasicMaterial( {color: 0x070707, side: THREE.DoubleSide} );
   var plane = new THREE.Mesh( geometry, material );
   plane.rotateX(90 * 3.14/180);
   plane.position.set(10,-0.02,10);
@@ -253,7 +254,7 @@ function clearmarkers(agent)
     allcurrentmarkers[i].closestDistance = 9999.0;
   }
 
-  allcurrentmarkers = [];
+  globalmarkerlistcount = 0;
 }
 
 function getMarkers(agent, agentindex)
@@ -265,9 +266,9 @@ function getMarkers(agent, agentindex)
 
   for( var k = 0; k<guiParameters.gridCellDensity ; k++)
   {
-    for (var _i = -1; _i < 1; _i++) 
+    for (var _i = -1; _i <= 1; _i++) 
     {
-      for (var _j=-1; _j < 1; _j++) 
+      for (var _j=-1; _j <= 1; _j++) 
       {
         var i = x+_i;
         var j = z+_j;
@@ -295,12 +296,13 @@ function getMarkers(agent, agentindex)
 
         var marker = grid[index];
 
-        if ( ((agentPos.x + guiParameters.searchRadius) >= marker.position.x || 
-              (agentPos.x - guiParameters.searchRadius) <= marker.position.x) && 
-             ((agentPos.z + guiParameters.searchRadius) >= marker.position.z || 
-              (agentPos.z - guiParameters.searchRadius) <= marker.position.z ) )
+        var mpos = marker.position;
+        var dist_r = agentPos.distanceTo(mpos);
+
+        if(dist_r < guiParameters.searchRadius)
         {
-          allcurrentmarkers.push(marker);       
+          allcurrentmarkers[globalmarkerlistcount] = marker;
+          globalmarkerlistcount++;     
         }
       }
     }
@@ -309,7 +311,7 @@ function getMarkers(agent, agentindex)
 
 function assignMarkers()
 {
-  for (var i = 0; i < allcurrentmarkers.length; i++) 
+  for (var i = 0; i < globalmarkerlistcount; i++) 
   {
     var minDistAgentIndex = -1;
     var marker = allcurrentmarkers[i];
