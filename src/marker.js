@@ -2,10 +2,10 @@ const THREE = require('three')
 
 export default class Marker
 {
-    constructor(pos)
+    constructor(pos, _index)
     {
-      this.owner = undefined;
       this.position = pos;
+      this.markerindex = _index;
       this.closestDistance = 9999.0;
     }
 }

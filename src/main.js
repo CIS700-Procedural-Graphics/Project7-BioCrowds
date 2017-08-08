@@ -26,6 +26,7 @@ var grid = new Array(guiParameters.gridsize*guiParameters.gridsize);//each grid 
                                             //its a 1D array with samrt indexing, ie every xth row
                                             //is x*gridsize_z*gridCellDensity from the start
 var agentList = [];
+var allcurrentmarkers = [];
 
 var particles_mesh = new THREE.Points( new THREE.BufferGeometry(), new THREE.PointsMaterial( { sizeAttenuation : false, size: 3.0, vertexColors: THREE.VertexColors } ) );
 particles_mesh.geometry.dynamic = true;
@@ -96,8 +97,7 @@ function addPlaneAndMarkers(scene)
   gridHelper.position.set(10,0,10);
   scene.add( gridHelper );
 
-  particles_mesh.geometry.setDrawRange( 0, guiParameters.gridsize * guiParameters.gridsize * guiParameters.gridCellDensity );  
-  particles_mesh.rotateX(90 * 3.14/180);
+  particles_mesh.geometry.setDrawRange( 0, guiParameters.gridsize * guiParameters.gridsize * guiParameters.gridCellDensity );
   scene.add(particles_mesh);
 
   spawnagents(scene);
@@ -132,35 +132,32 @@ function markers(scene)
 
   for( var k = 0; k<100 ; k++)
   {
-    for( var i = -10; i<20 ; i++)
+    for( var i = 0; i<20 ; i++)
     {
-      var j = 0;
-      
-      for(var m=-10;  m<20 ; m++)
+      for(var j = 0;  j<20 ; j++)
       {         
         x = Math.random() + i;
-        z = Math.random() + m;
+        z = Math.random() + j;
 
         randpos = new THREE.Vector3( x, 0.001, z );
 
         index = k*20*20 + 
-                (i+10)*20 +
-                (j+10);
+                i*20 +
+                j;
 
         markerindex = k*20*20*3 + 
-                      (i+10)*20*3 +
-                      (j+10);
+                      i*20*3 +
+                      j*3;
 
         positions[ markerindex ]     = randpos.x;
         positions[ markerindex + 1 ] = randpos.y;
         positions[ markerindex + 2 ] = randpos.z;
 
-        colors[ markerindex ]     = 0;
-        colors[ markerindex + 1 ] = 127;
-        colors[ markerindex + 2 ] = 255;
+        colors[ markerindex ]     = k/100;
+        colors[ markerindex + 1 ] = k/100;
+        colors[ markerindex + 2 ] = k/100;
 
-        grid[index] = new Marker( randpos );
-        j=j+3;
+        grid[index] = new Marker( randpos, markerindex );
       }
     }
   }
@@ -210,85 +207,135 @@ function spawnagents(scene)
 function moveAgents()
 {
   // Assigns markers based on the closest
+  if(particles_mesh.geometry.attributes.color)
+  {
+    clearmarkers(agentList[i]);
+  }
+
   for (var i = 0; i < agentList.length; i++) 
   {
     if(agentList[i])
     {
-      var gridMarkers = getMarkers(agentList[i]);
-      assignMarkers(agentList[i], gridMarkers);
+      getMarkers(agentList[i], i);
 
-      if(particles_mesh.geometry.attributes.color)
-      {
-        particles_mesh.geometry.attributes.color.needsUpdate = true;
-      }
-
-      agentList[i].updateAgent();
-      agentList[i].mesh.position.set( agentList[i].position.x, agentList[i].position.y, agentList[i].position.z );
+      // agentList[i].updateAgent();
+      // agentList[i].mesh.position.set( agentList[i].position.x, agentList[i].position.y, agentList[i].position.z );
     }
   }
+
+  if(particles_mesh.geometry.attributes.color)
+  {
+    assignMarkers();
+    particles_mesh.geometry.attributes.color.needsUpdate = true;
+  }
+
 }
 
-function getMarkers(agent)
+function clearmarkers(agent)
+{
+  var markerindex;
+  var colors = particles_mesh.geometry.attributes.color.array;
+
+  for(var i=0; i<allcurrentmarkers.length; i++)
+  {    
+    markerindex = allcurrentmarkers[i].markerindex;
+
+    colors[ markerindex ]     = 0;
+    colors[ markerindex + 1 ] = 0;
+    colors[ markerindex + 2 ] = 0;
+
+    allcurrentmarkers[i].closestDistance = 9999.0;
+  }
+
+  allcurrentmarkers = [];
+}
+
+function getMarkers(agent, agentindex)
 {
   var agentPos = agent.position;
   var x = Math.floor(agentPos.x);
   var z = Math.floor(agentPos.z);
-  var markers = [];
   var index, markerindex;
 
   var colors = particles_mesh.geometry.attributes.color.array;
 
   for( var k = 0; k<guiParameters.gridCellDensity ; k++)
   {
-    for (var i = -1; i <= 1; i++) 
+    for (var _i = -1; _i <= 1; _i++) 
     {
-
-      var j = -1;
-      for (var m=-1; m <= 1; m++) 
+      for (var _j=-1; _j <= 1; _j++) 
       {
+        var i = x+_i;
+        var j = z+_j;
+
+        if(i<0)
+        {
+          i=0;
+        }
+        else if(i>=guiParameters.gridsize)
+        {
+          i=guiParameters.gridsize-1;
+        }
+        if(j<0)
+        {
+          j=0;
+        }
+        else if(j>=guiParameters.gridsize)
+        {
+          j=guiParameters.gridsize-1;
+        }
+
         index = k*20*20 + 
-                (x+i+10)*20 +
-                (z+j+10);
+                i*20 +
+                j;
 
         var marker = grid[index];
 
-
-        if ((agentPos.x + guiParameters.searchRadius) < marker.position.x && 
-            (agentPos.x - guiParameters.searchRadius) > marker.position.x && 
-            (agentPos.z + guiParameters.searchRadius) < marker.position.z && 
-            (agentPos.z - guiParameters.searchRadius) > marker.position.z ) 
+        if ( ((agentPos.x + guiParameters.searchRadius) >= marker.position.x || 
+              (agentPos.x - guiParameters.searchRadius) <= marker.position.x) && 
+             ((agentPos.z + guiParameters.searchRadius) >= marker.position.z || 
+              (agentPos.z - guiParameters.searchRadius) <= marker.position.z ) )
         {
-          console.log("here");
-          var dist = agentPos.distanceTo(marker.position);
-          if(dist<marker.closestDistance)
-          {
-            markers.push(marker);
-
-            markerindex = k*20*20*3 + 
-                          (x+i+10)*20*3 +
-                          (z+j+10);
-
-            colors[ markerindex ]     = agent.color.r;
-            colors[ markerindex + 1 ] = agent.color.g;
-            colors[ markerindex + 2 ] = agent.color.b;
-
-            console.log(agent.color);
-          }          
+          allcurrentmarkers.push(marker);       
         }
-
-        j=j+3;
-
       }
     }
   }
 
-  return markers;
 }
 
-function assignMarkers(agent, markers)
+function assignMarkers()
 {
-  agent.markers = markers;
+  var markerindex;
+  var colors = particles_mesh.geometry.attributes.color.array;
 
+  for (var i = 0; i < allcurrentmarkers.length; i++) 
+  {
+    var minDistAgentIndex = -1;
+    var marker = allcurrentmarkers[i];
+    for (var j = 0; j < agentList.length; j++) 
+    {
+      var agentpos = agentList[j].position;
+      var dist = agentpos.distanceTo(marker.position);
+
+      if(dist<marker.closestDistance)
+      {
+        minDistAgentIndex = j;
+        marker.closestDistance = dist;
+      }
+    }
+
+    if(minDistAgentIndex != -1)
+    {
+      agentList[minDistAgentIndex].markers.push(marker);
+
+      markerindex = marker.markerindex;
+
+      colors[ markerindex ]     = agentList[minDistAgentIndex].color.r;
+      colors[ markerindex + 1 ] = agentList[minDistAgentIndex].color.g;
+      colors[ markerindex + 2 ] = agentList[minDistAgentIndex].color.b;
+    }
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -315,7 +362,7 @@ function onLoad(framework)
 // called on frame updates
 function onUpdate(framework)
 {
-  //moveAgents();
+  moveAgents();
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate

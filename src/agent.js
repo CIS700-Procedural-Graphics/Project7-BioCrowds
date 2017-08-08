@@ -5,12 +5,11 @@ var cylindergeo = new THREE.CylinderGeometry( 1, 2, 1 );
 
 export default class Agent
 {
-    constructor(pos, vel, _goal, mat, color) //, _orientation)
+    constructor(pos, vel, _goal, mat, _color) //, _orientation)
     {
-      this.name = "Agent";
       this.position = pos;
       this.velocity = vel;
-      this.color = 
+      this.color = _color;
       this.mesh = new THREE.Mesh( cylindergeo, mat );
       this.goal = _goal;
       this.size = 1; //radius maybe
@@ -20,12 +19,13 @@ export default class Agent
     drawagent(scene)
     {
       this.mesh.scale.set( 0.2, 0.2, 0.2 );
-      this.mesh.position.set( this.position.x, this.position.y + cylindergeo.height, this.position.z );
+      this.mesh.position.set( this.position.x, this.position.y + 0.1, this.position.z );
       scene.add(this.mesh);
     }
 
     updateAgent()
-    {//using speed independent of timestep for now
+    {
+      //using speed independent of timestep for now
       this.velocity = new THREE.Vector3((this.goal.x - this.position.x ) * 0.05,
                                         (this.goal.y - this.position.y ) * 0.05,
                                         (this.goal.z - this.position.z ) * 0.05);
