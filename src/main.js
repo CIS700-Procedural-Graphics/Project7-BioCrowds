@@ -17,7 +17,7 @@ var guiParameters = {
   numagents: 15,
   searchRadius: 1.5,
   gridsize: 20, //technically = guiParameters.agentsize * 20, --> use that formula when making things dynamic
-  gridCellDensity: 10,
+  gridCellDensity: 75,
   goal_x: 0.01,
   goal_z: 0.01
 }
@@ -27,6 +27,9 @@ var grid = new Array(guiParameters.gridsize*guiParameters.gridsize);//each grid 
                                             //is x*gridsize_z*gridCellDensity from the start
 var agentList = [];
 var allcurrentmarkers = [];
+
+var markerindex;
+var colors;
 
 var particles_mesh = new THREE.Points( new THREE.BufferGeometry(), new THREE.PointsMaterial( { sizeAttenuation : false, size: 3.0, vertexColors: THREE.VertexColors } ) );
 particles_mesh.geometry.dynamic = true;
@@ -39,7 +42,7 @@ function changeGUI(gui, camera, scene)
   gui.add(camera, 'fov', 0, 180).onChange(function(newVal) {
     camera.updateProjectionMatrix();
   });
-  gui.add(guiParameters, 'gridCellDensity', 10, 100).onChange(function(newVal) {
+  gui.add(guiParameters, 'gridCellDensity', 10, 500).onChange(function(newVal) {
     onreset(scene);
   });
   gui.add(guiParameters, 'numagents', 10, 50).step(1).onChange(function(newVal) {
@@ -124,13 +127,12 @@ function markers(scene)
   var x,z;
   var randpos;
   var index;
-  var markerindex;
 
-  var num_particles = guiParameters.gridsize * guiParameters.gridsize * 100; //100 is the max gridcell density
+  var num_particles = guiParameters.gridsize * guiParameters.gridsize * 250; //100 is the max gridcell density
   var positions = new Float32Array( num_particles * 3 );
-  var colors = new Float32Array( num_particles * 3 );
+  colors = new Float32Array( num_particles * 3 );
 
-  for( var k = 0; k<100 ; k++)
+  for( var k = 0; k<250 ; k++)
   {
     for( var i = 0; i<20 ; i++)
     {
@@ -177,10 +179,11 @@ function spawnagents(scene)
   var radius = Math.sqrt(guiParameters.gridsize*guiParameters.gridsize*0.25 + guiParameters.gridsize*guiParameters.gridsize*0.25)
   var circlegeo = new THREE.CircleGeometry( radius*0.5, guiParameters.numagents ); //radius, segments
   circlegeo.rotateX(-PI*0.5);
+  circlegeo.translate(10,0,10);
 
   for(var i=1; i<(segments+1); i++)
   {
-    var pos = new THREE.Vector3( circlegeo.vertices[i].x + 10, circlegeo.vertices[i].y, circlegeo.vertices[i].z + 10 );
+    var pos = new THREE.Vector3( circlegeo.vertices[i].x, circlegeo.vertices[i].y, circlegeo.vertices[i].z);
 
     var oppIndex = (i+Math.ceil(segments*0.5))%segments;
     if(oppIndex == 0)
@@ -204,7 +207,7 @@ function spawnagents(scene)
   }
 }
 
-function moveAgents()
+function crowdSimUpdate()
 {
   // Assigns markers based on the closest
   if(particles_mesh.geometry.attributes.color)
@@ -217,9 +220,6 @@ function moveAgents()
     if(agentList[i])
     {
       getMarkers(agentList[i], i);
-
-      // agentList[i].updateAgent();
-      // agentList[i].mesh.position.set( agentList[i].position.x, agentList[i].position.y, agentList[i].position.z );
     }
   }
 
@@ -229,13 +229,17 @@ function moveAgents()
     particles_mesh.geometry.attributes.color.needsUpdate = true;
   }
 
+  for (var i = 0; i < agentList.length; i++) 
+  {
+    if(agentList[i])
+    {
+      agentList[i].updateAgent();
+    }
+  }
 }
 
 function clearmarkers(agent)
 {
-  var markerindex;
-  var colors = particles_mesh.geometry.attributes.color.array;
-
   for(var i=0; i<allcurrentmarkers.length; i++)
   {    
     markerindex = allcurrentmarkers[i].markerindex;
@@ -255,15 +259,13 @@ function getMarkers(agent, agentindex)
   var agentPos = agent.position;
   var x = Math.floor(agentPos.x);
   var z = Math.floor(agentPos.z);
-  var index, markerindex;
-
-  var colors = particles_mesh.geometry.attributes.color.array;
+  var index;
 
   for( var k = 0; k<guiParameters.gridCellDensity ; k++)
   {
-    for (var _i = -1; _i <= 1; _i++) 
+    for (var _i = -1; _i < 1; _i++) 
     {
-      for (var _j=-1; _j <= 1; _j++) 
+      for (var _j=-1; _j < 1; _j++) 
       {
         var i = x+_i;
         var j = z+_j;
@@ -301,14 +303,10 @@ function getMarkers(agent, agentindex)
       }
     }
   }
-
 }
 
 function assignMarkers()
 {
-  var markerindex;
-  var colors = particles_mesh.geometry.attributes.color.array;
-
   for (var i = 0; i < allcurrentmarkers.length; i++) 
   {
     var minDistAgentIndex = -1;
@@ -338,6 +336,51 @@ function assignMarkers()
   }
 }
 
+function moveAgent(agent)
+{
+
+  // temp_vector_to_goal.x = agent.goal.x - agent.position.x;
+  // temp_vector_to_goal.y = agent.goal.y - agent.position.y;
+  // temp_vector_to_goal.z = agent.goal.z - agent.position.z;
+
+  // if (temp_vector_to_goal.length() < 0.5)
+  //     continue;
+
+  // for (var m = 0; m < markers.length; m++) {
+      
+  //     var marker = markers[m];
+  //     temp_displacement.x = marker.position.x - agent.position.x;
+  //     temp_displacement.y = marker.position.y - agent.position.y;
+  //     temp_displacement.z = marker.position.z - agent.position.z;
+
+  //     var dot = temp_displacement.dot(temp_vector_to_goal);
+      
+  //     var cos_theta = dot / (temp_displacement.length() * temp_vector_to_goal.length());
+      
+  //     marker.weight = (1.0 + cos_theta)  / (1.0 + temp_displacement.length());
+
+  //     sum_weight += marker.weight;
+      
+  // }
+
+  // for (var m = 0; m < markers.length; m++) {
+      
+  //     var marker = markers[m];
+  //     temp_displacement.x = marker.position.x - agent.position.x;
+  //     temp_displacement.y = marker.position.y - agent.position.y;
+  //     temp_displacement.z = marker.position.z - agent.position.z;
+      
+  //     marker.weight = marker.weight / sum_weight;
+      
+  //     temp_vel.add(temp_displacement.multiplyScalar(marker.weight));
+  // }
+                  
+  // agent.velocity = temp_vel.multiplyScalar(0.1*config.agent_speed);
+
+
+  // agent.updatePosition(agents);
+}
+
 //------------------------------------------------------------------------------
 // called after the scene loads
 function onLoad(framework)
@@ -356,13 +399,15 @@ function onLoad(framework)
   markers(scene);
   scene.add(particles_mesh);
 
+  colors = particles_mesh.geometry.attributes.color.array;
+
   spawnagents(scene);
 }
 
 // called on frame updates
 function onUpdate(framework)
 {
-  moveAgents();
+  crowdSimUpdate();
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
