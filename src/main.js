@@ -19,7 +19,8 @@ var guiParameters = {
   gridsize: 20, //technically = guiParameters.agentsize * 20, --> use that formula when making things dynamic
   gridCellDensity: 75,
   goal_x: 0.01,
-  goal_z: 0.01
+  goal_z: 0.01,
+  pause: false
 }
 
 var grid = new Array(guiParameters.gridsize*guiParameters.gridsize);//each grid contains a list of markers
@@ -39,15 +40,16 @@ particles_mesh.geometry.dynamic = true;
 
 function changeGUI(gui, camera, scene)
 {
-  gui.add(camera, 'fov', 0, 180).onChange(function(newVal) {
+  gui.add(camera, 'fov', 0, 180).name("Camera FOV").onChange(function(newVal) {
     camera.updateProjectionMatrix();
   });
-  gui.add(guiParameters, 'gridCellDensity', 10, 500).onChange(function(newVal) {
+  gui.add(guiParameters, 'gridCellDensity', 10, 250).name("Marker Density").onChange(function(newVal) {
     onreset(scene);
   });
-  gui.add(guiParameters, 'numagents', 10, 50).step(1).onChange(function(newVal) {
+  gui.add(guiParameters, 'numagents', 10, 50).name("Number of Agents").step(1).onChange(function(newVal) {
     onreset(scene);
   });
+  gui.add(guiParameters, 'pause').name("Pause").onChange(function(newVal) {});
 }
 
 //------------------------------------------------------------------------------
@@ -338,47 +340,6 @@ function assignMarkers()
 
 function moveAgent(agent)
 {
-
-  // temp_vector_to_goal.x = agent.goal.x - agent.position.x;
-  // temp_vector_to_goal.y = agent.goal.y - agent.position.y;
-  // temp_vector_to_goal.z = agent.goal.z - agent.position.z;
-
-  // if (temp_vector_to_goal.length() < 0.5)
-  //     continue;
-
-  // for (var m = 0; m < markers.length; m++) {
-      
-  //     var marker = markers[m];
-  //     temp_displacement.x = marker.position.x - agent.position.x;
-  //     temp_displacement.y = marker.position.y - agent.position.y;
-  //     temp_displacement.z = marker.position.z - agent.position.z;
-
-  //     var dot = temp_displacement.dot(temp_vector_to_goal);
-      
-  //     var cos_theta = dot / (temp_displacement.length() * temp_vector_to_goal.length());
-      
-  //     marker.weight = (1.0 + cos_theta)  / (1.0 + temp_displacement.length());
-
-  //     sum_weight += marker.weight;
-      
-  // }
-
-  // for (var m = 0; m < markers.length; m++) {
-      
-  //     var marker = markers[m];
-  //     temp_displacement.x = marker.position.x - agent.position.x;
-  //     temp_displacement.y = marker.position.y - agent.position.y;
-  //     temp_displacement.z = marker.position.z - agent.position.z;
-      
-  //     marker.weight = marker.weight / sum_weight;
-      
-  //     temp_vel.add(temp_displacement.multiplyScalar(marker.weight));
-  // }
-                  
-  // agent.velocity = temp_vel.multiplyScalar(0.1*config.agent_speed);
-
-
-  // agent.updatePosition(agents);
 }
 
 //------------------------------------------------------------------------------
@@ -407,7 +368,10 @@ function onLoad(framework)
 // called on frame updates
 function onUpdate(framework)
 {
-  crowdSimUpdate();
+  if(!guiParameters.pause)
+  {
+    crowdSimUpdate();
+  }  
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
