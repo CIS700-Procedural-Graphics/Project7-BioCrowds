@@ -6,6 +6,7 @@ var totalWeight = 0;
 var distToMarker = 0;
 var distToGoal = 0;
 var totalVelocity = new THREE.Vector3(0,0,0);
+var distBtwOldNewPos = 0;
 
 export default class Agent
 {
@@ -17,7 +18,8 @@ export default class Agent
       this.mesh = new THREE.Mesh( cylindergeo, mat );
       this.goal = _goal;
       this.size = 1; //radius maybe
-      this.markers = [];      
+      this.markers = [];
+      this.oldposition = new THREE.Vector3(pos.x,pos.y,pos.z);
     }
 
     drawagent(scene)
@@ -38,7 +40,7 @@ export default class Agent
       distToGoal = temp_vector_to_goal.length();
       temp_vector_to_goal = temp_vector_to_goal.normalize();
 
-      if (distToGoal < 0.1) 
+      if (distToGoal < 0.2) 
       {
         return;
       }
@@ -64,7 +66,7 @@ export default class Agent
 
       if (totalWeight == 0.0) 
       {
-        this.velocity = temp_vector_to_goal;
+        this.velocity = temp_vector_to_goal.multiplyScalar(0.5);
       }
       else
       {
@@ -77,8 +79,20 @@ export default class Agent
         this.velocity = totalVelocity.multiplyScalar(0.5);
       }
 
+      this.oldposition.x = this.position.x;
+      this.oldposition.x = this.position.y;
+      this.oldposition.x = this.position.z;
+
       this.position.x = this.position.x + this.velocity.x;
       this.position.z = this.position.z + this.velocity.z;
+
+      distBtwOldNewPos = this.oldposition.distanceTo(this.position);
+
+      if(distBtwOldNewPos < 0.05)
+      {
+        this.position.x = this.position.x + this.velocity.x*3;
+        this.position.z = this.position.z + this.velocity.z*3;
+      }
 
       this.mesh.scale.set(0.15, 0.15, 0.15);
       this.mesh.position.set( this.position.x, this.position.y + 0.1, this.position.z );
