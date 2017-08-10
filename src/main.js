@@ -7,6 +7,7 @@ var RAND = require('random-seed').create(Math.random());
 
 import Agent from './agent'
 import Marker from './marker'
+import Obstacle from './obstacle'
 OBJLoader(THREE);
 
 //------------------------------------------------------------------------------
@@ -22,13 +23,14 @@ var guiParameters = {
 	unoccupiedMarkerColor: [ 255, 255, 255 ],
 	simulation: 1,
 	obstacles: 2,
-	pause: false
+	pause: true
 }
 
 var grid = new Array(guiParameters.gridsize*guiParameters.gridsize);//each grid contains a list of markers
                                             //its a 1D array with samrt indexing, ie every xth row
                                             //is x*gridsize_z*gridCellDensity from the start
 var agentList = [];
+var obstacleList = []
 
 var markerindex;
 var colors;
@@ -92,6 +94,7 @@ function onreset(scene)
 	addPlaneAndMarkers(scene);
 	resetMarkers();
 	generateObstacles(scene)
+	respawnAgents(scene);
 }
 
 function addPlaneAndMarkers(scene)
@@ -110,15 +113,6 @@ function addPlaneAndMarkers(scene)
 
 	particles_mesh.geometry.setDrawRange( 0, guiParameters.gridsize * guiParameters.gridsize * guiParameters.gridCellDensity );
 	scene.add(particles_mesh);
-
-	if(guiParameters.simulation == 1)
-	{
-		spawnagents_circle(scene);
-	}
-	else
-	{
-		spawnagents_line(scene);
-	}	
 }
 
 function cleanscene(scene)
@@ -154,6 +148,18 @@ function resetMarkers()
 	}
 
 	particles_mesh.geometry.attributes.color.needsUpdate = true;
+}
+
+function respawnAgents(scene)
+{
+	if(guiParameters.simulation == 1)
+	{
+		spawnagents_circle(scene);
+	}
+	else
+	{
+		spawnagents_line(scene);
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -219,6 +225,8 @@ function spawnagents_circle(scene)
 	for(var i=1; i<(segments+1); i++)
 	{
 		var pos = new THREE.Vector3( circlegeo.vertices[i].x, circlegeo.vertices[i].y, circlegeo.vertices[i].z);
+
+		pos = checkCollisions(pos);
 
 		var oppIndex = (i+Math.ceil(segments*0.5))%segments;
 		if(oppIndex == 0)
@@ -415,6 +423,7 @@ function colorMarkers(agent)
 
 function generateObstacles(scene)
 {
+	obstacleList = [];
 	for(var i=0; i<guiParameters.obstacles ;i++)
 	{
 		var obstaclepos = new THREE.Vector3(0,0,0);
@@ -429,6 +438,8 @@ function generateObstacles(scene)
 
 		obstacle.position.set( obstaclepos.x, obstaclepos.y, obstaclepos.z );
 		scene.add( obstacle );
+
+		obstacleList.push( new Obstacle(obstaclepos, obstacleradius) );
 
 		//deactivate overlapping markers
 		deactivateOverlappingMarkers(obstacle.position, obstacleradius);
@@ -461,6 +472,57 @@ function deactivateOverlappingMarkers(obstaclePos, obstacleRadius)
 			}
 		}
 	}
+}
+
+function checkCollisions(pos)
+{
+	var new_pos = new THREE.Vector3(pos.x,pos.y,pos.z);
+
+	var totdistx = 0;
+	var totdistz = 0;
+
+	for(var i=0; i<obstacleList.length; i++)
+	{
+		var dist = obstacleList[i].position.distanceTo(new_pos);
+		var r = obstacleList[i].radius + 0.5;
+
+		if(dist < r)
+		{
+			var vecObstoAgent = (new THREE.Vector3(0, 0, 0)).subVectors(obstacleList[i].position, new_pos);
+			vecObstoAgent.normalize();
+			var vecObstoRim = new THREE.Vector3(1, 0, 0);
+
+			var cosTheta = vecObstoAgent.dot(vecObstoRim);
+			var sinTheta = Math.sqrt(1-cosTheta*cosTheta);
+
+			var rimpos = new THREE.Vector3(obstacleList[i].position.x, obstacleList[i].position.y, obstacleList[i].position.z);
+			rimpos.x += obstacleList[i].radius*cosTheta;
+			rimpos.z += obstacleList[i].radius*sinTheta;
+
+			if(rimpos.x < new_pos.x)
+			{
+				totdistx -= (rimpos.x-new_pos.x);
+			}
+			else
+			{
+				totdistx += (rimpos.x-new_pos.x);
+			}
+
+			if(rimpos.z < new_pos.z)
+			{
+				totdistz -= (rimpos.z-new_pos.z);
+			}
+			else
+			{
+				totdistz += (rimpos.z-new_pos.z);
+			}			
+		}
+	}
+
+	new_pos.x += totdistx;
+	new_pos.z += totdistz;
+
+	return new_pos;
 }
 
 //------------------------------------------------------------------------------

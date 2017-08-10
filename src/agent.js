@@ -24,7 +24,7 @@ export default class Agent
 
     drawagent(scene)
     {
-      this.mesh.scale.set( 0.1, 0.1, 0.1 );
+      this.mesh.scale.set( 0.15, 0.15, 0.15 );
       this.mesh.position.set( this.position.x, this.position.y + 0.1, this.position.z );
       scene.add(this.mesh);
     }
