@@ -22,8 +22,9 @@ var guiParameters = {
 	maxmarkercount: 250,
 	unoccupiedMarkerColor: [ 255, 255, 255 ],
 	simulation: 1,
-	obstacles: 2,
-	pause: true
+	obstacles: 3,
+	visualdebug: false,
+	pause: false
 }
 
 var grid = new Array(guiParameters.gridsize*guiParameters.gridsize);//each grid contains a list of markers
@@ -43,10 +44,10 @@ particles_mesh.geometry.dynamic = true;
 
 function changeGUI(gui, camera, scene)
 {
-	gui.add(guiParameters, 'simulation', { circle: 1, opposingLines: 2 } ).onChange(function(newVal){
+	gui.add(guiParameters, 'simulation', { circle: 1, opposingLines: 2, quad: 3, cornered: 4 } ).onChange(function(newVal){
 		onreset(scene);
 	});
-	gui.add(guiParameters, 'obstacles', 2, 5).name("Number of Obstacles").step(1).onChange(function(newVal) {
+	gui.add(guiParameters, 'obstacles', 2, 10).name("Number of Obstacles").step(1).onChange(function(newVal) {
 		onreset(scene);
 	});
 	gui.add(guiParameters, 'gridCellDensity', 5, guiParameters.maxmarkercount).name("Marker Density").onChange(function(newVal) {
@@ -55,6 +56,7 @@ function changeGUI(gui, camera, scene)
 	gui.add(guiParameters, 'numagents', 2, 50).name("Number of Agents").step(1).onChange(function(newVal) {
 		onreset(scene);
 	});
+	gui.add(guiParameters, 'visualdebug').name("Visual Debug").onChange(function(newVal) {});
 	gui.add(guiParameters, 'pause').name("Pause").onChange(function(newVal) {});
 }
 
@@ -156,9 +158,17 @@ function respawnAgents(scene)
 	{
 		spawnagents_circle(scene);
 	}
-	else
+	else if(guiParameters.simulation == 2)
 	{
 		spawnagents_line(scene);
+	}
+	else if(guiParameters.simulation == 3)
+	{
+		spawnagents_quad(scene);
+	}
+	else if(guiParameters.simulation == 4)
+	{
+		spawnagents_cornered(scene);
 	}
 }
 
@@ -262,6 +272,85 @@ function spawnagents_line(scene)
 		var _goal = new THREE.Vector3( xpos+0.65, 0.1, 18.0 );
 		var vel = new THREE.Vector3((pos.x - _goal.x), (pos.y - _goal.y), (pos.z - _goal.z));
 
+		var agent_mat = new THREE.MeshBasicMaterial();
+		agent_mat.color = new THREE.Color( RAND.random(), RAND.random(), RAND.random() );
+
+		var agent = new Agent(pos, vel, _goal, agent_mat, agent_mat.color);
+
+		agentList.push(agent);
+		agentList[i].drawagent(scene);
+	}
+}
+
+function spawnagents_quad(scene)
+{
+	agentList = [];
+	var quad_offset = 2.5;
+	var quadpos1 = new THREE.Vector3(quad_offset, 0.0, quad_offset);	
+	var quadpos2 = new THREE.Vector3(guiParameters.gridsize - quad_offset, 0.0, quad_offset);
+	var quadpos3 = new THREE.Vector3(guiParameters.gridsize - quad_offset, 0.0, guiParameters.gridsize - quad_offset);
+	var quadpos4 = new THREE.Vector3(quad_offset, 0.0, guiParameters.gridsize - quad_offset);
+
+	for(var i=0; i<guiParameters.numagents; i++)
+	{
+		var pos = new THREE.Vector3(0,0,0);
+		var _goal = new THREE.Vector3(0,0,0);
+		if(i%4==0)
+		{
+			pos.x = quadpos1.x;
+			pos.z = quadpos1.z;
+
+			_goal.x = quadpos3.x;
+			_goal.z = quadpos3.z;
+		}
+		if(i%4==1)
+		{
+			pos.x = quadpos2.x;
+			pos.z = quadpos2.z;
+
+			_goal.x = quadpos4.x;
+			_goal.z = quadpos4.z;
+		}
+		if(i%4==2)
+		{
+			pos.x = quadpos3.x;
+			pos.z = quadpos3.z;
+
+			_goal.x = quadpos1.x;
+			_goal.z = quadpos1.z;
+		}
+		if(i%4==3)
+		{
+			pos.x = quadpos4.x;
+			pos.z = quadpos4.z;
+
+			_goal.x = quadpos2.x;
+			_goal.z = quadpos2.z;
+		}
+
+		var vel = new THREE.Vector3((pos.x - _goal.x), (pos.y - _goal.y), (pos.z - _goal.z));
+		var agent_mat = new THREE.MeshBasicMaterial();
+		agent_mat.color = new THREE.Color( RAND.random(), RAND.random(), RAND.random() );
+
+		var agent = new Agent(pos, vel, _goal, agent_mat, agent_mat.color);
+
+		agentList.push(agent);
+		agentList[i].drawagent(scene);
+	}
+}
+
+function spawnagents_cornered(scene)
+{
+	agentList = [];
+	var corner_offset = 1.5;
+	var cornerpos = new THREE.Vector3(corner_offset, 0.0, corner_offset);
+
+	for(var i=0; i<guiParameters.numagents; i++)
+	{
+		var pos = new THREE.Vector3(guiParameters.gridsize-(corner_offset+2), 0.0, guiParameters.gridsize-(corner_offset+2));
+		var _goal = cornerpos;
+		
+		var vel = new THREE.Vector3((pos.x - _goal.x), (pos.y - _goal.y), (pos.z - _goal.z));
 		var agent_mat = new THREE.MeshBasicMaterial();
 		agent_mat.color = new THREE.Color( RAND.random(), RAND.random(), RAND.random() );
 
