@@ -18,9 +18,9 @@ var guiParameters = {
 	numagents: 15,
 	searchRadius: 1.0,
 	gridsize: 20, //technically = guiParameters.agentsize * 20, --> use that formula when making things dynamic
-	gridCellDensity: 20,
+	gridCellDensity: 69,
 	maxmarkercount: 250,
-	unoccupiedMarkerColor: [ 255, 255, 255 ],
+	unoccupiedMarkerColor: [ 0, 0.4784, 0.349 ], //0,122,89
 	simulation: 1,
 	obstacles: 3,
 	visualdebug: false,
@@ -30,18 +30,18 @@ var guiParameters = {
 var grid = new Array(guiParameters.gridsize*guiParameters.gridsize);//each grid contains a list of markers
                                             //its a 1D array with samrt indexing, ie every xth row
                                             //is x*gridsize_z*gridCellDensity from the start
+//its a 1D array with samrt indexing, ie every xth row
+//is x*gridsize_z*gridCellDensity from the start
 var agentList = [];
-var obstacleList = []
+var obstacleList = [];
 
 var markerindex;
 var colors;
 
-var particles_mesh = new THREE.Points( new THREE.BufferGeometry(), new THREE.PointsMaterial( { sizeAttenuation : false, size: 3.0, vertexColors: THREE.VertexColors } ) );
+var particles_mesh = new THREE.Points( new THREE.BufferGeometry(), new THREE.PointsMaterial( { sizeAttenuation : false, size: 2.0, vertexColors: THREE.VertexColors } ) );
 particles_mesh.geometry.dynamic = true;
 
-
 //------------------------------------------------------------------------------
-
 function changeGUI(gui, camera, scene)
 {
 	gui.add(guiParameters, 'simulation', { circle: 1, opposingLines: 2, quad: 3, cornered: 4 } ).onChange(function(newVal){
@@ -64,30 +64,33 @@ function changeGUI(gui, camera, scene)
 
 function setupLightsandSkybox(scene, camera, renderer)
 {
-  // Set light
-  var directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
-  directionalLight.color.setHSL(0.1, 1, 0.95);
-  directionalLight.position.set(1, 3, 2);
-  directionalLight.position.multiplyScalar(10);
-  scene.add(directionalLight);
+	// Set light
+	var directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
+	directionalLight.color.setHSL(0.1, 1, 0.95);
+	directionalLight.position.set(1, 3, 2);
+	directionalLight.position.multiplyScalar(10);
+	scene.add(directionalLight);
 
-  renderer.setClearColor( 0x000 );
+	renderer.setClearColor( 0x000 );
 
-  //set plane
-  var geometry = new THREE.PlaneGeometry( guiParameters.gridsize, guiParameters.gridsize, 1 );
-  var material = new THREE.MeshBasicMaterial( {color: 0x070707, side: THREE.DoubleSide} );
-  var plane = new THREE.Mesh( geometry, material );
-  plane.rotateX(90 * 3.14/180);
-  plane.position.set(10,-0.02,10);
-  scene.add( plane );
+	//set plane
+	var geometry = new THREE.PlaneGeometry( guiParameters.gridsize, guiParameters.gridsize, 1 );
+	var material = new THREE.MeshBasicMaterial( {color: 0x070707, side: THREE.DoubleSide} );
+	var plane = new THREE.Mesh( geometry, material );
+	plane.rotateX(90 * 3.14/180);
+	plane.position.set(10,-0.02,10);
+	scene.add( plane );
 
-  var gridHelper = new THREE.GridHelper( guiParameters.gridsize*0.5, guiParameters.gridsize );
-  gridHelper.position.set(10,0,10);
-  scene.add( gridHelper );
+	if(guiParameters.visualdebug)
+	{
+		var gridHelper = new THREE.GridHelper( guiParameters.gridsize*0.5, guiParameters.gridsize );
+		gridHelper.position.set(10,0,10);
+		scene.add( gridHelper );
+	}
 
-  // set camera position
-  camera.position.set(10, 13, 10);
-  camera.lookAt(new THREE.Vector3(10,0,10));
+	// set camera position
+	camera.position.set(10, 13, 10);
+	camera.lookAt(new THREE.Vector3(10,0,10));
 }
 
 function onreset(scene)
@@ -109,9 +112,12 @@ function addPlaneAndMarkers(scene)
 	plane.position.set(10,-0.02,10);
 	scene.add( plane );
 
-	var gridHelper = new THREE.GridHelper( guiParameters.gridsize*0.5, guiParameters.gridsize );
-	gridHelper.position.set(10,0,10);
-	scene.add( gridHelper );
+	if(guiParameters.visualdebug)
+	{
+		var gridHelper = new THREE.GridHelper( guiParameters.gridsize*0.5, guiParameters.gridsize );
+		gridHelper.position.set(10,0,10);
+		scene.add( gridHelper );
+	}
 
 	particles_mesh.geometry.setDrawRange( 0, guiParameters.gridsize * guiParameters.gridsize * guiParameters.gridCellDensity );
 	scene.add(particles_mesh);
@@ -359,16 +365,21 @@ function spawnagents_cornered(scene)
 		agentList.push(agent);
 		agentList[i].drawagent(scene);
 	}
+
+	// //draw goal
+	// var goalmesh = new THREE.Mesh( new THREE.CylinderGeometry( 1.2, 1.2, 1 ), new THREE.MeshBasicMaterial({color: 0xff0000}) );
+	// goalmesh.position.set(cornerpos.x, cornerpos.y+0.1, cornerpos.z);
+	// scene.add(goalmesh);
 }
 
 //------------------------------------------------------------------------------
 
-function crowdSimUpdate()
+function crowdSimUpdate(scene)
 {
 	// Assigns markers based on the closest
 	for (var i = 0; i < agentList.length; i++) 
 	{
-		if(agentList[i] && particles_mesh.geometry.attributes.color)
+		if(agentList[i] && particles_mesh.geometry.attributes.color && agentList[i].active == true)
 		{
 			clearmarkers(agentList[i]);
 		}
@@ -376,7 +387,7 @@ function crowdSimUpdate()
 
 	for (var i = 0; i < agentList.length; i++) 
 	{
-		if(agentList[i])
+		if(agentList[i] && agentList[i].active == true)
 		{
 			getMarkers(agentList[i], i);
 		}
@@ -384,7 +395,7 @@ function crowdSimUpdate()
 
 	for (var i = 0; i < agentList.length; i++) 
 	{
-		if(agentList[i])
+		if(agentList[i] && agentList[i].active == true)
 		{
 			colorMarkers(agentList[i]);
 		}
@@ -395,11 +406,36 @@ function crowdSimUpdate()
 		particles_mesh.geometry.attributes.color.needsUpdate = true;
 	}
 
-	for (var i = 0; i < agentList.length; i++) 
+	for (var i = 0; i < agentList.length; i++)
 	{
-		if(agentList[i])
+		if(agentList[i] && agentList[i].active == true)
 		{
-			agentList[i].updateAgent();
+			agentList[i].updateAgent( guiParameters.gridCellDensity );
+		}
+	}
+
+	if( guiParameters.simulation > 2 )
+	{
+		for (var i = 0; i < agentList.length; i++)
+		{
+			if(agentList[i] && agentList[i].active == false && agentList[i].drawn == true)
+			{
+				agentList[i].stopDrawingAgent(scene);
+				
+				for(var j=0; j<agentList[i].markers.length; j++)
+				{
+					markerindex = agentList[i].markers[j].markerindex;
+
+					colors[ markerindex ]     = 0;
+					colors[ markerindex + 1 ] = 0;
+					colors[ markerindex + 2 ] = 0;
+
+					agentList[i].markers[j].ownerindex = -1;
+					agentList[i].markers[j].closestDistance = 9999.0;
+				}
+
+				agentList[i].markers = [];
+			}
 		}
 	}
 }
@@ -410,9 +446,18 @@ function clearmarkers(agent)
 	{
 		markerindex = agent.markers[i].markerindex;
 
-		colors[ markerindex ]     = 0;
-		colors[ markerindex + 1 ] = 0;
-		colors[ markerindex + 2 ] = 0;
+		if(guiParameters.visualdebug)
+		{
+			colors[ markerindex ]     = 0;
+			colors[ markerindex + 1 ] = 0;
+			colors[ markerindex + 2 ] = 0;
+		}
+		else
+		{
+			colors[ markerindex ]     = guiParameters.unoccupiedMarkerColor[0];
+			colors[ markerindex + 1 ] = guiParameters.unoccupiedMarkerColor[1];
+			colors[ markerindex + 2 ] = guiParameters.unoccupiedMarkerColor[2];
+		}
 
 		agent.markers[i].ownerindex = -1;
 		agent.markers[i].closestDistance = 9999.0;
@@ -490,10 +535,10 @@ function getMarkers(agent, agentindex)
 
 						agent.markers.push(marker);
 					}
-        		}
-      		}
+				}
+			}
 		}
-  	}
+	}
 }
 
 function colorMarkers(agent)
@@ -522,7 +567,7 @@ function generateObstacles(scene)
 		obstaclepos.z = obstacleradius + (Math.random() * (guiParameters.gridsize - obstacleradius*2));
 
 		var obstacleGeo = new THREE.CylinderGeometry( obstacleradius, obstacleradius, 0.3, 24 );
-		var obstacleMat = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+		var obstacleMat = new THREE.MeshBasicMaterial( {color: 0xad181f} );
 		var obstacle = new THREE.Mesh( obstacleGeo, obstacleMat );
 
 		obstacle.position.set( obstaclepos.x, obstaclepos.y, obstaclepos.z );
@@ -554,9 +599,12 @@ function deactivateOverlappingMarkers(obstaclePos, obstacleRadius)
 					marker.closestDistance = -9999.0;
 
 					//uncomment to see markers affected by the obstacle
-					// colors[ marker.markerindex ]     = 255;
-					// colors[ marker.markerindex + 1 ] = 0;
-					// colors[ marker.markerindex + 2 ] = 0;
+					if(guiParameters.visualdebug)
+					{
+						colors[ marker.markerindex ]     = 173/255;
+						colors[ marker.markerindex + 1 ] = 24/255;
+						colors[ marker.markerindex + 2 ] = 31/255;
+					}
 				}
 			}
 		}
@@ -642,7 +690,7 @@ function onUpdate(framework)
 {
 	if(!guiParameters.pause)
 	{
-		crowdSimUpdate();
+		crowdSimUpdate(framework.scene);
 	}
 }
 

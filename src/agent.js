@@ -5,6 +5,7 @@ var cylindergeo = new THREE.CylinderGeometry( 1, 2, 1 );
 var totalWeight = 0;
 var distToMarker = 0;
 var distToGoal = 0;
+var distToGoal1 = 0;
 var totalVelocity = new THREE.Vector3(0,0,0);
 var distBtwOldNewPos = 0;
 
@@ -17,9 +18,10 @@ export default class Agent
       this.color = _color;
       this.mesh = new THREE.Mesh( cylindergeo, mat );
       this.goal = _goal;
-      this.size = 1; //radius maybe
       this.markers = [];
       this.oldposition = new THREE.Vector3(pos.x,pos.y,pos.z);
+      this.active = true;
+      this.drawn = false;
     }
 
     drawagent(scene)
@@ -27,9 +29,16 @@ export default class Agent
       this.mesh.scale.set( 0.15, 0.15, 0.15 );
       this.mesh.position.set( this.position.x, this.position.y + 0.1, this.position.z );
       scene.add(this.mesh);
+      this.drawn = true;
     }
 
-    updateAgent()
+    stopDrawingAgent(scene)
+    {
+      this.mesh.scale.set( 0.00001, 0.00001, 0.00001 );
+      this.drawn = false;
+    }
+
+    updateAgent(markernum)
     {      
       var displacements = [];
       var markerweights = [];
@@ -40,8 +49,9 @@ export default class Agent
       distToGoal = temp_vector_to_goal.length();
       temp_vector_to_goal = temp_vector_to_goal.normalize();
 
-      if (distToGoal < 0.2) 
+      if (distToGoal < 0.15) 
       {
+        this.active = false;
         return;
       }
 
@@ -64,9 +74,13 @@ export default class Agent
       totalVelocity.y =0;
       totalVelocity.z =0;
 
+      var temp1_vector_to_goal = (new THREE.Vector3(0, 0, 0)).subVectors(this.goal, this.position);
+      temp1_vector_to_goal.y = 0.0;
+      distToGoal1 = temp1_vector_to_goal.length();
+
       if (totalWeight == 0.0) 
       {
-        this.velocity = temp_vector_to_goal.multiplyScalar(0.5);
+        this.velocity = temp_vector_to_goal.multiplyScalar(0.05);
       }
       else
       {
@@ -76,7 +90,7 @@ export default class Agent
           totalVelocity.add(displacements[i]);
         }
 
-        this.velocity = totalVelocity.multiplyScalar(0.5);
+        this.velocity = totalVelocity.multiplyScalar(0.2);
       }
 
       this.oldposition.x = this.position.x;
@@ -88,10 +102,11 @@ export default class Agent
 
       distBtwOldNewPos = this.oldposition.distanceTo(this.position);
 
-      if(distBtwOldNewPos < 0.05)
+      if(distBtwOldNewPos < 1.0)
       {
-        this.position.x = this.position.x + this.velocity.x*3;
-        this.position.z = this.position.z + this.velocity.z*3;
+        markernum=markernum+10;
+        markernum = markernum%250;
+        return;
       }
 
       this.mesh.scale.set(0.15, 0.15, 0.15);
