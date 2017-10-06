@@ -30,6 +30,8 @@ Agent velocity at the next frame is then computed using an averaged sum of the d
 
 ![](Images/MarkerInfluenceWeighting1.png)
 ![](Images/MarkerInfluenceWeighting2.png)
+![](Images/velocityCalculation.png)
+![](Images/eventualMovement.png)
 
 _pictures obtained from Austin Eng's brilliant ppt on the same topic, linked in the references section_
 
